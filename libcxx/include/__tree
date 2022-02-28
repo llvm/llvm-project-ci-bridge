@@ -1116,7 +1116,7 @@ public:
     _LIBCPP_HIDE_FROM_ABI explicit __tree(const allocator_type& __a);
     _LIBCPP_HIDE_FROM_ABI __tree(const value_compare& __comp, const allocator_type& __a);
     _LIBCPP_HIDE_FROM_ABI __tree(const __tree& __t);
-    _LIBCPP_HIDE_FROM_ABI __tree& operator=(const __tree& __t);
+    _LIBCPP_HIDE_FROM_ABI __tree& operator=(const __tree& __t) = delete; // use __assign_unique or __assign_multi instead
     template <class _ForwardIterator>
     _LIBCPP_HIDE_FROM_ABI void __assign_unique(_ForwardIterator __first, _ForwardIterator __last);
     template <class _InputIterator>
@@ -1542,6 +1542,8 @@ private:
 
     template <class, class, class, class> friend class _LIBCPP_TEMPLATE_VIS map;
     template <class, class, class, class> friend class _LIBCPP_TEMPLATE_VIS multimap;
+    template <class, class, class> friend class _LIBCPP_TEMPLATE_VIS set;
+    template <class, class, class> friend class _LIBCPP_TEMPLATE_VIS multiset;
 };
 
 template <class _Tp, class _Compare, class _Allocator>
@@ -1618,19 +1620,6 @@ __tree<_Tp, _Compare, _Allocator>::_DetachedTreeCache::__detach_next(__node_poin
 }
 
 template <class _Tp, class _Compare, class _Allocator>
-__tree<_Tp, _Compare, _Allocator>&
-__tree<_Tp, _Compare, _Allocator>::operator=(const __tree& __t)
-{
-    if (this != _VSTD::addressof(__t))
-    {
-        value_comp() = __t.value_comp();
-        __copy_assign_alloc(__t);
-        __assign_multi(__t.begin(), __t.end());
-    }
-    return *this;
-}
-
-template <class _Tp, class _Compare, class _Allocator>
 template <class _ForwardIterator>
 void
 __tree<_Tp, _Compare, _Allocator>::__assign_unique(_ForwardIterator __first, _ForwardIterator __last)
@@ -1649,8 +1638,8 @@ __tree<_Tp, _Compare, _Allocator>::__assign_unique(_ForwardIterator __first, _Fo
                   __cache.__advance();
             }
     }
-    for (; __first != __last; ++__first)
-        __insert_unique(*__first);
+    for (const_iterator __e = end(); __first != __last; ++__first)
+        __insert_unique(__e, *__first);
 }
 
 template <class _Tp, class _Compare, class _Allocator>
@@ -1673,8 +1662,8 @@ __tree<_Tp, _Compare, _Allocator>::__assign_multi(_InputIterator __first, _Input
             __cache.__advance();
         }
     }
-    for (; __first != __last; ++__first)
-        __insert_multi(_NodeTypes::__get_value(*__first));
+    for (const_iterator __e = end(); __first != __last; ++__first)
+        __insert_multi(__e, _NodeTypes::__get_value(*__first));
 }
 
 template <class _Tp, class _Compare, class _Allocator>

@@ -111,17 +111,15 @@ struct ConstructorIterator : Base {
   using Base::Base;
 
   void run(benchmark::State& State) const {
-    auto Data = makeTestingSets(MapSize, Mode::Hit, Shuffle::None, 1);
-    auto& Map = Data.Maps.front();
-    while (State.KeepRunningBatch(MapSize)) {
-#ifndef VALIDATE
-      benchmark::DoNotOptimize(
-          std::map<uint64_t, int64_t>(Map.begin(), Map.end()));
-#else
-      std::map<uint64_t, int64_t> M{Map.begin(), Map.end()};
-      if (M != Map)
-        State.SkipWithError("Map copy not identical");
-#endif
+    auto Data = makeTestingSets(MapSize, Mode::Hit, Shuffle::None, 1000);
+    while (State.KeepRunningBatch(MapSize * Data.Maps.size())) {
+      for (auto& Map : Data.Maps) {
+        std::map<uint64_t, int64_t> M(Map.begin(), Map.end());
+        benchmark::DoNotOptimize(M);
+      }
+      State.PauseTiming();
+      Data = makeTestingSets(MapSize, Mode::Hit, Shuffle::None, 1000);
+      State.ResumeTiming();
     }
   }
 
@@ -132,17 +130,15 @@ struct ConstructorCopy : Base {
   using Base::Base;
 
   void run(benchmark::State& State) const {
-    auto Data = makeTestingSets(MapSize, Mode::Hit, Shuffle::None, 1);
-    auto& Map = Data.Maps.front();
-    while (State.KeepRunningBatch(MapSize)) {
-#ifndef VALIDATE
-      std::map<uint64_t, int64_t> M(Map);
-      benchmark::DoNotOptimize(M);
-#else
-      std::map<uint64_t, int64_t> M(Map);
-      if (M != Map)
-        State.SkipWithError("Map copy not identical");
-#endif
+    auto Data = makeTestingSets(MapSize, Mode::Hit, Shuffle::None, 1000);
+    while (State.KeepRunningBatch(MapSize * Data.Maps.size())) {
+      for (auto const& Map : Data.Maps) {
+        std::map<uint64_t, int64_t> M(Map);
+        benchmark::DoNotOptimize(M);
+      }
+      State.PauseTiming();
+      Data = makeTestingSets(MapSize, Mode::Hit, Shuffle::None, 1000);
+      State.ResumeTiming();
     }
   }
 
@@ -166,6 +162,47 @@ struct ConstructorMove : Base {
   }
 
   std::string name() const { return "BM_ConstructorMove" + baseName(); }
+};
+
+struct CopyAssignment : Base {
+  using Base::Base;
+
+  void run(benchmark::State& State) const {
+    auto Data = makeTestingSets(MapSize, Mode::Hit, Shuffle::None, 1000);
+    while (State.KeepRunningBatch(MapSize * Data.Maps.size())) {
+      for (auto const& Map : Data.Maps) {
+        std::map<uint64_t, int64_t> M;
+        M = Map;
+        benchmark::DoNotOptimize(M);
+      }
+      State.PauseTiming();
+      Data = makeTestingSets(MapSize, Mode::Hit, Shuffle::None, 1000);
+      State.ResumeTiming();
+    }
+  }
+
+  std::string name() const { return "BM_CopyAssignment" + baseName(); }
+};
+
+struct CopyAssignmentPrepopulated : Base {
+  using Base::Base;
+
+  void run(benchmark::State& State) const {
+    auto Data = makeTestingSets(MapSize, Mode::Hit, Shuffle::None, 1000);
+    auto Init = makeTestingSets(MapSize, Mode::Hit, Shuffle::None, 1000);
+    while (State.KeepRunningBatch(MapSize * Data.Maps.size())) {
+      for (std::size_t i = 0; i != Data.Maps.size(); ++i) {
+        Init.Maps[i] = Data.Maps[i];
+        benchmark::DoNotOptimize(Init.Maps[i]);
+      }
+      State.PauseTiming();
+      Data = makeTestingSets(MapSize, Mode::Hit, Shuffle::None, 1000);
+      Init = makeTestingSets(MapSize, Mode::Hit, Shuffle::None, 1000);
+      State.ResumeTiming();
+    }
+  }
+
+  std::string name() const { return "BM_CopyAssignmentPrepopulated" + baseName(); }
 };
 
 //*******************************************************************|
@@ -1006,6 +1043,8 @@ int main(int argc, char** argv) {
   makeCartesianProductBenchmark<ConstructorIterator>(MapSize);
   makeCartesianProductBenchmark<ConstructorCopy>(MapSize);
   makeCartesianProductBenchmark<ConstructorMove>(MapSize);
+  makeCartesianProductBenchmark<CopyAssignment>(MapSize);
+  makeCartesianProductBenchmark<CopyAssignmentPrepopulated>(MapSize);
 
   // Capacity
   makeCartesianProductBenchmark<Empty>(MapSize);

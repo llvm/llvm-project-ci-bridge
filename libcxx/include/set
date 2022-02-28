@@ -610,7 +610,11 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     set& operator=(const set& __s)
         {
-            __tree_ = __s.__tree_;
+            if (this != std::addressof(__s)) {
+                __tree_.value_comp() = __s.__tree_.value_comp();
+                __tree_.__copy_assign_alloc(__s.__tree_);
+                __tree_.__assign_unique(__s.begin(), __s.end());
+            }
             return *this;
         }
 
@@ -1148,7 +1152,11 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     multiset& operator=(const multiset& __s)
         {
-            __tree_ = __s.__tree_;
+            if (this != std::addressof(__s)) {
+                __tree_.value_comp() = __s.__tree_.value_comp();
+                __tree_.__copy_assign_alloc(__s.__tree_);
+                __tree_.__assign_multi(__s.begin(), __s.end());
+            }
             return *this;
         }
 

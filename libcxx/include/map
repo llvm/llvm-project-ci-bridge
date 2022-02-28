@@ -735,8 +735,6 @@ template <class _Key, class _Tp, class _Compare, class _Allocator>
     class multimap;
 template <class _TreeIterator> class __map_const_iterator;
 
-#ifndef _LIBCPP_CXX03_LANG
-
 template <class _Key, class _Tp>
 struct _LIBCPP_STANDALONE_DEBUG __value_type
 {
@@ -816,33 +814,6 @@ private:
     __value_type(const __value_type&) = delete;
     __value_type(__value_type&&) = delete;
 };
-
-#else
-
-template <class _Key, class _Tp>
-struct __value_type
-{
-    typedef _Key                                     key_type;
-    typedef _Tp                                      mapped_type;
-    typedef pair<const key_type, mapped_type>        value_type;
-
-private:
-    value_type __cc_;
-
-public:
-    _LIBCPP_INLINE_VISIBILITY
-    value_type& __get_value() { return __cc_; }
-    _LIBCPP_INLINE_VISIBILITY
-    const value_type& __get_value() const { return __cc_; }
-
-private:
-   __value_type();
-   __value_type(__value_type const&);
-   __value_type& operator=(__value_type const&);
-   ~__value_type();
-};
-
-#endif // _LIBCPP_CXX03_LANG
 
 template <class _Tp>
 struct __extract_key_value_types;
@@ -1095,16 +1066,11 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     map& operator=(const map& __m)
         {
-#ifndef _LIBCPP_CXX03_LANG
-            __tree_ = __m.__tree_;
-#else
             if (this != _VSTD::addressof(__m)) {
-                __tree_.clear();
                 __tree_.value_comp() = __m.__tree_.value_comp();
                 __tree_.__copy_assign_alloc(__m.__tree_);
-                insert(__m.begin(), __m.end());
+                __tree_.__assign_unique(__m.begin(), __m.end());
             }
-#endif
             return *this;
         }
 
@@ -1895,16 +1861,11 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     multimap& operator=(const multimap& __m)
         {
-#ifndef _LIBCPP_CXX03_LANG
-            __tree_ = __m.__tree_;
-#else
             if (this != _VSTD::addressof(__m)) {
-                __tree_.clear();
                 __tree_.value_comp() = __m.__tree_.value_comp();
                 __tree_.__copy_assign_alloc(__m.__tree_);
-                insert(__m.begin(), __m.end());
+                __tree_.__assign_multi(__m.begin(), __m.end());
             }
-#endif
             return *this;
         }
 
