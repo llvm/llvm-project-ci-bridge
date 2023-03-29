@@ -365,7 +365,7 @@ DEFAULT_FEATURES += [
 
   # Tests that require std::pmr support in the built library
   Feature(name='availability-pmr-missing',
-    when=lambda cfg: BooleanExpression.evaluate('stdlib=apple-libc++ && target={{.+}}-apple-macosx{{(10.9|10.10|10.11|10.12|10.13|10.14|10.15|11.0)(.0)?}}', cfg.available_features)),
+    when=lambda cfg: BooleanExpression.evaluate('stdlib=apple-libc++ && target={{.+}}-apple-macosx{{(10.9|10.10|10.11|10.12|10.13|10.14|10.15|11.0|12.0|13.0)(.0)?}}', cfg.available_features)),
 
   # Tests that require std::filesystem support in the built library
   Feature(name='availability-filesystem-missing',

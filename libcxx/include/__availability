@@ -169,6 +169,11 @@
 // #   define _LIBCPP_AVAILABILITY_HAS_NO_VERBOSE_ABORT
 #   define _LIBCPP_AVAILABILITY_VERBOSE_ABORT
 
+    // This controls the availability of the C++17 std::pmr library,
+    // which is implemented in large part in the built library.
+// #   define _LIBCPP_AVAILABILITY_HAS_NO_PMR
+#   define _LIBCPP_AVAILABILITY_PMR
+
 #elif defined(__APPLE__)
 
     // shared_mutex and shared_timed_mutex
@@ -320,6 +325,13 @@
 #       define _LIBCPP_AVAILABILITY_HAS_NO_VERBOSE_ABORT
 #   endif
 #   define _LIBCPP_AVAILABILITY_VERBOSE_ABORT                                   \
+        __attribute__((unavailable))
+
+    // std::pmr
+#   if 1 // TODO: Update once this is released
+#       define _LIBCPP_AVAILABILITY_HAS_NO_PMR
+#   endif
+#   define _LIBCPP_AVAILABILITY_PMR                                             \
         __attribute__((unavailable))
 
 #else
