@@ -8,7 +8,7 @@
 
 // Check that PSTL algorithms are marked [[nodiscard]] as a conforming extension
 
-// REQUIRES: with-pstl
+// UNSUPPORTED: libcpp-has-no-incomplete-pstl
 
 // UNSUPPORTED: c++03, c++11, c++14
 

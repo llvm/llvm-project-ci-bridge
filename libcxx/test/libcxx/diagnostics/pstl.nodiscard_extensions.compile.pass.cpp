@@ -11,7 +11,7 @@
 
 // ADDITIONAL_COMPILE_FLAGS: -D_LIBCPP_DISABLE_NODISCARD_EXT
 
-// REQUIRES: with-pstl
+// UNSUPPORTED: libcpp-has-no-incomplete-pstl
 
 // UNSUPPORTED: c++03, c++11, c++14
 

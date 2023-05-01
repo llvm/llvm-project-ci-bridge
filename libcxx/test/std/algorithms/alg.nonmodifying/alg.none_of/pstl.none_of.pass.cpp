@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-// REQUIRES: with-pstl
+// UNSUPPORTED: libcpp-has-no-incomplete-pstl
 
 // <algorithm>
 

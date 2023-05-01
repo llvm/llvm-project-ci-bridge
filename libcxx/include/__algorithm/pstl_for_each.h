@@ -22,7 +22,7 @@
 #  pragma GCC system_header
 #endif
 
-#if defined(_LIBCPP_HAS_PARALLEL_ALGORITHMS) && _LIBCPP_STD_VER >= 17
+#if !defined(_LIBCPP_HAS_NO_PARALLEL_ALGORITHMS) && _LIBCPP_STD_VER >= 17
 
 _LIBCPP_BEGIN_NAMESPACE_STD
 
@@ -68,6 +68,6 @@ for_each_n(_ExecutionPolicy&& __policy, _ForwardIterator __first, _Size __size, 
 
 _LIBCPP_END_NAMESPACE_STD
 
-#endif // defined(_LIBCPP_HAS_PARALLEL_ALGORITHMS) && _LIBCPP_STD_VER >= 17
+#endif // !defined(_LIBCPP_HAS_NO_PARALLEL_ALGORITHMS) && _LIBCPP_STD_VER >= 17
 
 #endif // _LIBCPP___ALGORITHM_PSTL_FOR_EACH_H

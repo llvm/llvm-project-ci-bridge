@@ -10,7 +10,7 @@
 // alphabetic macros.
 
 // FIXME: This should pass with the PSTL enabled
-// XFAIL: with-pstl
+// XFAIL: libcpp-has-no-incomplete-pstl
 
 // Prevent <ext/hash_map> from generating deprecated warnings for this test.
 #if defined(__DEPRECATED)

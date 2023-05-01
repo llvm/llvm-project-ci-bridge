@@ -10,7 +10,7 @@
 
 // UNSUPPORTED: c++03, c++11, c++14
 
-// REQUIRES: with-pstl
+// UNSUPPORTED: libcpp-has-no-incomplete-pstl
 
 // template<class ExecutionPolicy, class ForwardIterator, class T>
 //   void fill(ExecutionPolicy&& exec,
