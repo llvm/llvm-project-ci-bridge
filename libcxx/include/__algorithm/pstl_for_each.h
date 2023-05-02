@@ -9,6 +9,7 @@
 #ifndef _LIBCPP___ALGORITHM_PSTL_FOR_EACH_H
 #define _LIBCPP___ALGORITHM_PSTL_FOR_EACH_H
 
+#include <__algorithm/pstl_backend.h>
 #include <__algorithm/for_each.h>
 #include <__algorithm/for_each_n.h>
 #include <__config>
@@ -33,24 +34,8 @@ template <class _ExecutionPolicy,
           enable_if_t<is_execution_policy_v<__remove_cvref_t<_ExecutionPolicy>>, int> = 0>
 _LIBCPP_HIDE_FROM_ABI void
 for_each(_ExecutionPolicy&& __policy, _ForwardIterator __first, _ForwardIterator __last, _Function __func) {
-  if constexpr (__is_parallel_execution_policy_v<_ExecutionPolicy> &&
-                __is_cpp17_random_access_iterator<_ForwardIterator>::value) {
-    std::__terminate_on_exception([&] {
-      __pstl::__par_backend::__parallel_for(
-          {},
-          __policy,
-          __first,
-          __last,
-          [&__policy, __func](_ForwardIterator __brick_first, _ForwardIterator __brick_last) {
-            std::for_each(std::__remove_parallel_policy(__policy), __brick_first, __brick_last, __func);
-          });
-    });
-  } else if constexpr (__is_unsequenced_execution_policy_v<_ExecutionPolicy> &&
-                       __is_cpp17_random_access_iterator<_ForwardIterator>::value) {
-    __pstl::__unseq_backend::__simd_walk_1(__first, __last - __first, __func);
-  } else {
-    std::for_each(__first, __last, __func);
-  }
+  using _Backend = typename __select_backend<__remove_cvref_t<_ExecutionPolicy>>::type;
+  __pstl_for_each(_Backend{}, __policy, std::move(__first), std::move(__last), std::move(__func));
 }
 
 template <class _ExecutionPolicy,
@@ -60,10 +45,16 @@ template <class _ExecutionPolicy,
           enable_if_t<is_execution_policy_v<__remove_cvref_t<_ExecutionPolicy>>, int> = 0>
 _LIBCPP_HIDE_FROM_ABI void
 for_each_n(_ExecutionPolicy&& __policy, _ForwardIterator __first, _Size __size, _Function __func) {
-  if constexpr (__is_cpp17_random_access_iterator<_ForwardIterator>::value) {
-    std::for_each(__policy, __first, __first + __size, __func);
+  using _Backend = typename __select_backend<__remove_cvref_t<_ExecutionPolicy>>::type;
+  if constexpr (HAS-FOR_EACH_N(_Backend)) {
+    __pstl_for_each_n(_Backend{}, __policy, std::move(__first), __size, std::move(__func));
   } else {
-    std::for_each_n(__first, __size, __func);
+    // Default implementation
+    if constexpr (__is_cpp17_random_access_iterator<_ForwardIterator>::value) {
+      std::for_each(__policy, __first, __first + __size, __func);
+    } else {
+      std::for_each_n(__first, __size, __func);
+    }
   }
 }
 
