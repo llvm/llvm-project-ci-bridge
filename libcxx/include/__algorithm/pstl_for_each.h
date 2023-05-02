@@ -9,6 +9,7 @@
 #ifndef _LIBCPP___ALGORITHM_PSTL_FOR_EACH_H
 #define _LIBCPP___ALGORITHM_PSTL_FOR_EACH_H
 
+#include <__algorithm/pstl_backend.h>
 #include <__algorithm/for_each.h>
 #include <__algorithm/for_each_n.h>
 #include <__config>
@@ -32,11 +33,22 @@ template <class _ExecutionPolicy,
           enable_if_t<is_execution_policy_v<__remove_cvref_t<_ExecutionPolicy>>, int> = 0>
 _LIBCPP_HIDE_FROM_ABI void
 for_each(_ExecutionPolicy&& __policy, _ForwardIterator __first, _ForwardIterator __last, _Function __func) {
+  // Possibilities:
+
+  //
+  // 1. Dispatch right here to the backend, let the backend implement the whole thing.
+  //    If we do this, I guess we don't want a separate notion of parallel backend and a
+  //    notion of unsequenced backend?
+  //
+  std::__pstl_backend::__for_each(__policy, __first, __last, __func);
+
+  //
+  // 2. Deconstruct the parallel policy and call the various backends separately.
+  //
   if constexpr (__is_parallel_execution_policy_v<_ExecutionPolicy> &&
                 __is_cpp17_random_access_iterator<_ForwardIterator>::value) {
     std::__terminate_on_exception([&] {
-      __pstl::__par_backend::__parallel_for(
-          {},
+      std::__pstl_par_backend::__for_each(
           __policy,
           __first,
           __last,
@@ -46,7 +58,7 @@ for_each(_ExecutionPolicy&& __policy, _ForwardIterator __first, _ForwardIterator
     });
   } else if constexpr (__is_unsequenced_execution_policy_v<_ExecutionPolicy> &&
                        __is_cpp17_random_access_iterator<_ForwardIterator>::value) {
-    __pstl::__unseq_backend::__simd_walk_1(__first, __last - __first, __func);
+    std::__pstl_unseq_backend::__for_each(__first, __last, __func);
   } else {
     std::for_each(__first, __last, __func);
   }
@@ -59,6 +71,8 @@ template <class _ExecutionPolicy,
           enable_if_t<is_execution_policy_v<__remove_cvref_t<_ExecutionPolicy>>, int> = 0>
 _LIBCPP_HIDE_FROM_ABI void
 for_each_n(_ExecutionPolicy&& __policy, _ForwardIterator __first, _Size __size, _Function __func) {
+  // TODO: Here we need to detect whether the back-end supports __for_each_n, and if so, call that?
+
   if constexpr (__is_cpp17_random_access_iterator<_ForwardIterator>::value) {
     std::for_each(__policy, __first, __first + __size, __func);
   } else {
