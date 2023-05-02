@@ -59,6 +59,7 @@ set(files
   __algorithm/mismatch.h
   __algorithm/move.h
   __algorithm/move_backward.h
+  __algorithm/negate_function.h
   __algorithm/next_permutation.h
   __algorithm/none_of.h
   __algorithm/nth_element.h
