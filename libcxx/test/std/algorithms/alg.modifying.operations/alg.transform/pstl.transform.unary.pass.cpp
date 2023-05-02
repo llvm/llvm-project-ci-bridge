@@ -27,7 +27,7 @@
 #include "test_iterators.h"
 
 template <class Iter1, class Iter2>
-struct Test {
+struct TestInt {
   template <class Policy>
   void operator()(Policy&& policy) {
     // simple test
@@ -48,7 +48,7 @@ struct Test {
   }
 };
 
-struct TestIterators {
+struct TestIteratorsInt {
   template <class Iter2>
   void operator()() {
     types::for_each(types::forward_iterator_list<int*>{},
@@ -57,7 +57,7 @@ struct TestIterators {
 };
 
 int main(int, char**) {
-  types::for_each(types::forward_iterator_list<int*>{}, TestIterators{});
+  types::for_each(types::forward_iterator_list<int*>{}, TestIteratorsInt{});
 
   return 0;
 }
