@@ -310,6 +310,7 @@ module std [system] {
       module mismatch                        { private header "__algorithm/mismatch.h" }
       module move                            { private header "__algorithm/move.h" }
       module move_backward                   { private header "__algorithm/move_backward.h" }
+      module negate_function                { private header "__algorithm/negate_function.h" }
       module next_permutation                { private header "__algorithm/next_permutation.h" }
       module none_of                         { private header "__algorithm/none_of.h" }
       module nth_element                     { private header "__algorithm/nth_element.h" }

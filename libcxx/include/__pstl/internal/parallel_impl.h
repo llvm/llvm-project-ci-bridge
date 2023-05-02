@@ -12,10 +12,8 @@
 
 #include "pstl_config.h"
 
+#include <__atomic/atomic_base.h>
 #include <__pstl/internal/parallel_backend.h>
-#include <atomic>
-// This header defines the minimum set of parallel routines required to support Parallel STL,
-// implemented on top of Intel(R) Threading Building Blocks (Intel(R) TBB) library
 
 namespace __pstl
 {
@@ -35,7 +33,7 @@ __parallel_find(_BackendTag __tag, _ExecutionPolicy&& __exec, _Index __first, _I
     typedef typename std::iterator_traits<_Index>::difference_type _DifferenceType;
     const _DifferenceType __n = __last - __first;
     _DifferenceType __initial_dist = __b_first ? __n : -1;
-    std::atomic<_DifferenceType> __extremum(__initial_dist);
+    std::__atomic_base<_DifferenceType> __extremum(__initial_dist);
     // TODO: find out what is better here: parallel_for or parallel_reduce
     __par_backend::__parallel_for(__tag, std::forward<_ExecutionPolicy>(__exec), __first, __last,
                                   [__comp, __f, __first, &__extremum](_Index __i, _Index __j)
@@ -67,7 +65,7 @@ __parallel_find(_BackendTag __tag, _ExecutionPolicy&& __exec, _Index __first, _I
 template <class _BackendTag, class _ExecutionPolicy, class _Index, class _Brick>
 _LIBCPP_HIDE_FROM_ABI
 bool __parallel_or(_BackendTag __tag, _ExecutionPolicy&& __exec, _Index __first, _Index __last, _Brick __f) {
-    std::atomic<bool> __found(false);
+    std::__atomic_base<bool> __found(false);
     __par_backend::__parallel_for(__tag, std::forward<_ExecutionPolicy>(__exec), __first, __last,
                                   [__f, &__found](_Index __i, _Index __j)
                                   {
