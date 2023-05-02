@@ -104,6 +104,7 @@ END-SCRIPT
 #include <__algorithm/mismatch.h> // expected-error@*:* {{use of private header from outside its module: '__algorithm/mismatch.h'}}
 #include <__algorithm/move.h> // expected-error@*:* {{use of private header from outside its module: '__algorithm/move.h'}}
 #include <__algorithm/move_backward.h> // expected-error@*:* {{use of private header from outside its module: '__algorithm/move_backward.h'}}
+#include <__algorithm/negate_function.h> // expected-error@*:* {{use of private header from outside its module: '__algorithm/negate_function.h'}}
 #include <__algorithm/next_permutation.h> // expected-error@*:* {{use of private header from outside its module: '__algorithm/next_permutation.h'}}
 #include <__algorithm/none_of.h> // expected-error@*:* {{use of private header from outside its module: '__algorithm/none_of.h'}}
 #include <__algorithm/nth_element.h> // expected-error@*:* {{use of private header from outside its module: '__algorithm/nth_element.h'}}
