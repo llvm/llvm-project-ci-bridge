@@ -17,7 +17,7 @@ function(install_symlink name target outdir link_or_copy)
   endif()
   set(outdir "${DESTDIR}${outdir}")
 
-  message(STATUS "Creating ${name}")
+  message(STATUS "Creating ${name} with ${link_or_copy}")
 
   execute_process(
     COMMAND "${CMAKE_COMMAND}" -E ${link_or_copy} "${target}" "${name}"
