@@ -207,7 +207,7 @@ DEFAULT_PARAMETERS = [
                  "brittle in the long run as changes are made to the test suite.",
             actions=lambda features: [AddFeature(f) for f in features]),
 
-  Parameter(name='enable_transitive_includes', choices=[True, False], type=bool, default=True,
+  Parameter(name='enable_transitive_includes', choices=[True, False], type=bool, default=False,
             help="Whether to enable backwards-compatibility transitive includes when running the tests. This "
                  "is provided to ensure that the trimmed-down version of libc++ does not bit-rot in between "
                  "points at which we bulk-remove transitive includes.",
