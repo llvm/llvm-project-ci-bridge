@@ -153,6 +153,13 @@ ABI Affecting Changes
   objects were marked as defined in the shared library. In other Standard modes, this should never be a problem
   since those objects were defined in the headers as ``constexpr``.
 
+- ``LIBCXXABI_USE_LLVM_UNWINDER`` and ``COMPILER_RT_USE_LLVM_UNWINDER`` switched defaults from ``OFF`` to ``ON``.
+  This means that by default, libc++abi and compiler-rt will link against the LLVM provided ``libunwind`` library
+  instead of the system-provided unwinding library. If you are building the LLVM runtimes with the goal of shipping
+  them so that they can interoperate with other system-provided libraries that might be using a different unwinding
+  library (such as ``libgcc_s``), you should pass ``LIBCXXABI_USE_LLVM_UNWINDER=OFF`` and ``COMPILER_RT_USE_LLVM_UNWINDER=OFF``
+  to make sure the system-provided unwinding library is used by the LLVM runtimes.
+
 Build System Changes
 --------------------
 
