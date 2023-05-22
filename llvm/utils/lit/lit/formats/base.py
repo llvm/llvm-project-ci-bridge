@@ -128,7 +128,7 @@ class ExecutableTest(FileBasedTest):
         if test.config.unsupported:
             return lit.Test.UNSUPPORTED
 
-        out, err, exitCode = lit.util.executeCommand(test.getSourcePath())
+        out, err, exitCode = lit.util.executeCommand(test.getFilePath())
 
         if not exitCode:
             return lit.Test.PASS, ""

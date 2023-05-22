@@ -1214,7 +1214,7 @@ def colonNormalizePath(path):
 
 
 def getDefaultSubstitutions(test, tmpDir, tmpBase, normalize_slashes=False):
-    sourcepath = test.getSourcePath()
+    sourcepath = test.getFilePath()
     sourcedir = os.path.dirname(sourcepath)
 
     # Normalize slashes, if requested.
@@ -1998,7 +1998,7 @@ def parseIntegratedTestScript(test, additional_parsers=[], require_script=True):
     # Parse the test sources and extract test properties
     try:
         parsed = _parseKeywords(
-            test.getSourcePath(), additional_parsers, require_script
+            test.getFilePath(), additional_parsers, require_script
         )
     except ValueError as e:
         return lit.Test.Result(Test.UNRESOLVED, str(e))

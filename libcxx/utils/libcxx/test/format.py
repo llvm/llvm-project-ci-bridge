@@ -6,6 +6,8 @@
 #
 #===----------------------------------------------------------------------===##
 
+import contextlib
+import io
 import lit
 import lit.formats
 import os
@@ -30,6 +32,32 @@ def _checkBaseSubstitutions(substitutions):
     substitutions = [s for (s, _) in substitutions]
     for s in ['%{cxx}', '%{compile_flags}', '%{link_flags}', '%{flags}', '%{exec}']:
         assert s in substitutions, "Required substitution {} was not provided".format(s)
+
+def _executeScriptInternal(test, litConfig, commands):
+  """
+  Returns (stdout, stderr, exitCode, timeoutInfo, parsedCommands)
+
+  TODO: This really should be easier to access from Lit itself
+  """
+  parsedCommands = parseScript(test, preamble=commands)
+
+  _, tmpBase = _getTempPaths(test)
+  execDir = os.path.dirname(test.getExecPath())
+  res = lit.TestRunner.executeScriptInternal(test, litConfig, tmpBase, parsedCommands, execDir)
+  if isinstance(res, lit.Test.Result): # Handle failure to parse the Lit test
+    res = ('', res.output, 127, None)
+  (out, err, exitCode, timeoutInfo) = res
+
+  # TODO: As a temporary workaround until https://reviews.llvm.org/D81892 lands, manually
+  #       split any stderr output that is included in stdout. It shouldn't be there, but
+  #       the Lit internal shell conflates stderr and stdout.
+  conflatedErrorOutput = re.search("(# command stderr:.+$)", out, flags=re.DOTALL)
+  if conflatedErrorOutput:
+    conflatedErrorOutput = conflatedErrorOutput.group(0)
+    out = out[:-len(conflatedErrorOutput)]
+    err += conflatedErrorOutput
+
+  return (out, err, exitCode, timeoutInfo, parsedCommands)
 
 def parseScript(test, preamble):
     """
@@ -124,6 +152,16 @@ class CxxStandardLibraryTest(lit.formats.TestFormat):
 
     FOO.sh.<anything>       - A builtin Lit Shell test
 
+    FOO.gen.<anything>      - A .sh test that generates one or more Lit tests on the
+                              fly. Executing this test must generate one or more files
+                              as expected by LLVM split-file, and each generated file
+                              leads to a separate Lit test that runs that file as
+                              defined by the test format. This can be used to generate
+                              multiple Lit tests from a single source file, which is
+                              useful for testing repetitive properties in the library.
+                              Be careful not to abuse this since this is not a replacement
+                              for usual code reuse techniques.
+
     FOO.verify.cpp          - Compiles with clang-verify. This type of test is
                               automatically marked as UNSUPPORTED if the compiler
                               does not support Clang-verify.
@@ -193,7 +231,7 @@ class CxxStandardLibraryTest(lit.formats.TestFormat):
                               '[.]compile[.]fail[.]cpp$',
                               '[.]link[.]pass[.]cpp$', '[.]link[.]pass[.]mm$',
                               '[.]link[.]fail[.]cpp$',
-                              '[.]sh[.][^.]+$',
+                              '[.]sh[.][^.]+$', '[.]gen[.][^.]+$',
                               '[.]verify[.]cpp$',
                               '[.]fail[.]cpp$']
         sourcePath = testSuite.getSourcePath(pathInSuite)
@@ -205,7 +243,13 @@ class CxxStandardLibraryTest(lit.formats.TestFormat):
             filepath = os.path.join(sourcePath, filename)
             if not os.path.isdir(filepath):
                 if any([re.search(ext, filename) for ext in SUPPORTED_SUFFIXES]):
-                    yield lit.Test.Test(testSuite, pathInSuite + (filename,), localConfig)
+                    # If this is a generated test, run the generation step and add
+                    # as many Lit tests as necessary.
+                    if re.search('[.]gen[.][^.]+$', filename):
+                        for test in self._generateGenTest(filepath, testSuite, pathInSuite, litConfig, localConfig):
+                            yield test
+                    else:
+                        yield lit.Test.Test(testSuite, pathInSuite + (filename,), localConfig)
 
     def execute(self, test, litConfig):
         VERIFY_FLAGS = '-Xclang -verify -Xclang -verify-ignore-unexpected=note -ferror-limit=0'
@@ -284,3 +328,39 @@ class CxxStandardLibraryTest(lit.formats.TestFormat):
             _, tmpBase = _getTempPaths(test)
             useExternalSh = False
             return lit.TestRunner._runShTest(test, litConfig, useExternalSh, script, tmpBase)
+
+    def _generateGenTest(self, filepath, testSuite, pathInSuite, litConfig, localConfig):
+        generator = lit.Test.Test(testSuite, pathInSuite, localConfig, file_path=filepath)
+        steps = [] # Steps must already be in the script
+        (out, err, exitCode, _, _) = _executeScriptInternal(generator, litConfig, steps)
+        if exitCode != 0:
+            raise RuntimeError(f"Error while trying to generate gen test: {out}")
+
+        # Process the 'out' to get rid of Lit-injected crap
+        actualOut = re.search("# command output:\n(.+)\n$", out, flags=re.DOTALL)
+        actualOut = actualOut.group(1) if actualOut else ""
+
+        # Split the generated output into multiple files and generate one test for each file
+        for (subfile, content) in self._splitFile(actualOut):
+            generatedPathInSuite = pathInSuite + (os.path.basename(filepath), subfile)
+            generatedRealPath = testSuite.getExecPath(generatedPathInSuite)
+            os.makedirs(os.path.dirname(generatedRealPath), exist_ok=True)
+            with open(generatedRealPath, 'w') as f:
+                f.write(content)
+            yield lit.Test.Test(testSuite, generatedPathInSuite, localConfig, file_path=generatedRealPath)
+
+    def _splitFile(self, input):
+        DELIM = r'^.+---(.+)'
+        lines = input.splitlines()
+        currentFile = None
+        thisFileContent = []
+        for line in lines:
+            match = re.match(DELIM, line)
+            if match:
+                if currentFile is not None:
+                    yield (currentFile, '\n'.join(thisFileContent))
+                currentFile = match.group(1).strip()
+                thisFileContent = []
+            assert currentFile is not None, f"Some input to split-file doesn't belong to any file, input was:\n{input}"
+            thisFileContent.append(line)
+        yield (currentFile, '\n'.join(thisFileContent))

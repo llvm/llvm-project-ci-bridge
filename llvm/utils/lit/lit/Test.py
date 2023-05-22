@@ -421,7 +421,7 @@ class Test:
         import lit.TestRunner
 
         parsed = lit.TestRunner._parseKeywords(
-            self.getSourcePath(), require_script=False
+            self.getFilePath(), require_script=False
         )
         feature_keywords = ("UNSUPPORTED:", "REQUIRES:", "XFAIL:")
         boolean_expressions = itertools.chain.from_iterable(

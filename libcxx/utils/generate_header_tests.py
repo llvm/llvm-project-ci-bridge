@@ -137,7 +137,6 @@ def main():
         'private_headers_still_public_in_modules': private_headers_still_public_in_modules
     }
 
-    produce(test.joinpath('libcxx/assertions/headers_declare_verbose_abort.sh.cpp'), variables)
     produce(test.joinpath('libcxx/clang_tidy.sh.cpp'), variables)
     produce(test.joinpath('libcxx/double_include.sh.cpp'), variables)
     produce(test.joinpath('libcxx/min_max_macros.compile.pass.cpp'), variables)
