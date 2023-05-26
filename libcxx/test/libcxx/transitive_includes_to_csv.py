@@ -125,9 +125,9 @@ def parse_file(file: pathlib.Path) -> List[str]:
     return result
 
 
-def create_include_graph(path: pathlib.Path) -> List[str]:
+def create_include_graph(trace_includes: List[pathlib.Path]) -> List[str]:
     result = list()
-    for file in sorted(path.glob("header.*")):
+    for file in trace_includes:
         headers = parse_file(file)
 
         # Get actual filenames relative to libc++'s installation directory instead of full paths
@@ -162,12 +162,12 @@ Typically this script is executed by libcxx/test/libcxx/transitive_includes.sh.c
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
-        "input",
+        "inputs",
         default=None,
-        metavar="DIR",
-        help="The directory containing the transitive includes of the headers.",
+        metavar="FILE",
+        nargs='+',
+        help="One or more files containing the result of --trace-includes on the headers one wishes to graph.",
     )
     options = parser.parse_args()
 
-    root = pathlib.Path(options.input)
-    print_csv(create_include_graph(root))
+    print_csv(create_include_graph(map(pathlib.Path, options.inputs)))
