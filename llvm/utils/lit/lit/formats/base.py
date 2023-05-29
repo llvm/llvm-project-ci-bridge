@@ -6,8 +6,21 @@ import lit.util
 
 
 class TestFormat(object):
-    pass
+    def getTestsForFilename(self, testSuite, path_in_suite, litConfig, localConfig):
+        """
+        Given the path to a test in the test suite, generates the Lit tests associated
+        to that path. There can be more than one test in cases where the testing format
+        allows generating multiple tests associated to a single path.
+        """
+        filename = path_in_suite[-1]
 
+        # Ignore dot files and excluded tests.
+        if filename.startswith(".") or filename in localConfig.excludes:
+            return
+
+        base, ext = os.path.splitext(filename)
+        if ext in localConfig.suffixes:
+            yield lit.Test.Test(testSuite, path_in_suite, localConfig)
 
 ###
 
@@ -16,17 +29,10 @@ class FileBasedTest(TestFormat):
     def getTestsInDirectory(self, testSuite, path_in_suite, litConfig, localConfig):
         source_path = testSuite.getSourcePath(path_in_suite)
         for filename in os.listdir(source_path):
-            # Ignore dot files and excluded tests.
-            if filename.startswith(".") or filename in localConfig.excludes:
-                continue
-
             filepath = os.path.join(source_path, filename)
             if not os.path.isdir(filepath):
-                base, ext = os.path.splitext(filename)
-                if ext in localConfig.suffixes:
-                    yield lit.Test.Test(
-                        testSuite, path_in_suite + (filename,), localConfig
-                    )
+                for t in self.getTestsForFilename(testSuite, path_in_suite + (filename,), litConfig, localConfig):
+                    yield t
 
 
 ###
@@ -76,12 +82,10 @@ class OneCommandPerFileTest(TestFormat):
                 suffix = path[len(dir) :]
                 if suffix.startswith(os.sep):
                     suffix = suffix[1:]
-                test = lit.Test.Test(
-                    testSuite, path_in_suite + tuple(suffix.split(os.sep)), localConfig
-                )
-                # FIXME: Hack?
-                test.source_path = path
-                yield test
+                for test in self.getTestsForFilename(testSuite, path_in_suite + tuple(suffix.split(os.sep)), litConfig, localConfig):
+                    # FIXME: Hack?
+                    test.source_path = path
+                    yield test
 
     def createTempInput(self, tmp, test):
         raise NotImplementedError("This is an abstract method.")
