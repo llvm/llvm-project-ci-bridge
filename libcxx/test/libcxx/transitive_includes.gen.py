@@ -20,7 +20,7 @@
 
 import sys
 sys.path.append(sys.argv[1])
-from libcxx.test.header_information import header_restrictions, public_headers
+from libcxx.test.header_information import lit_header_restrictions, public_headers
 
 import re
 
@@ -62,10 +62,7 @@ else:
 
     print(f"""\
 //--- {header}.sh.cpp
-
-// This test doesn't support being run when some headers are not available, since we
-// would need to add significant complexity to make that work.
-// UNSUPPORTED{BLOCKLIT}: no-localization, no-threads, no-wide-characters, no-filesystem
+{lit_header_restrictions.get(header, '')}
 
 // When built with modules, this test doesn't work because --trace-includes doesn't
 // report the stack of includes correctly.
@@ -78,9 +75,6 @@ else:
 // compatibility. When we bulk-remove them, we'll adjust the includes that are expected by
 // this test instead.
 // UNSUPPORTED{BLOCKLIT}: transitive-includes-disabled
-
-// TODO: Figure out why <stdatomic.h> doesn't work on FreeBSD
-// UNSUPPORTED{BLOCKLIT}: LIBCXX-FREEBSD-FIXME
 
 // RUN{BLOCKLIT}: mkdir %t
 // RUN{BLOCKLIT}: %{{cxx}} %s %{{flags}} %{{compile_flags}} --trace-includes -fshow-skipped-includes --preprocess > /dev/null 2> %t/trace-includes.txt
