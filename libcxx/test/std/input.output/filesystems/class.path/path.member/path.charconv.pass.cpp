@@ -37,7 +37,6 @@
 #include <cassert>
 
 #include "test_macros.h"
-#include "filesystem_test_helper.h"
 
 // Test conversion with strings that fit within the latin1 charset, that fit
 // within one code point in UTF-16, and that can be expressible in certain
