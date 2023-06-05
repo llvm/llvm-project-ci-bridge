@@ -27,8 +27,6 @@
 
 _LIBCPP_BEGIN_NAMESPACE_FILESYSTEM
 
-_LIBCPP_AVAILABILITY_FILESYSTEM_LIBRARY_PUSH
-
 class _LIBCPP_EXPORTED_FROM_ABI path::iterator {
 public:
   enum _ParserState : unsigned char {
@@ -124,8 +122,6 @@ inline _LIBCPP_INLINE_VISIBILITY bool operator!=(const path::iterator& __lhs,
                                                  const path::iterator& __rhs) {
   return !(__lhs == __rhs);
 }
-
-_LIBCPP_AVAILABILITY_FILESYSTEM_LIBRARY_POP
 
 _LIBCPP_END_NAMESPACE_FILESYSTEM
 

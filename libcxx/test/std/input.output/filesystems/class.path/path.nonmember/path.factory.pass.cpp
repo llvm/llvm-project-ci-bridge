@@ -23,7 +23,6 @@
 #include "test_macros.h"
 #include "test_iterators.h"
 #include "count_new.h"
-#include "filesystem_test_helper.h"
 
 
 int main(int, char**)
