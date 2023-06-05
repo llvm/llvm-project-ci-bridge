@@ -18,7 +18,6 @@
 
 #include "test_macros.h"
 #include "count_new.h"
-#include "filesystem_test_helper.h"
 
 // NOTE: this is tested in path.members/path.modifiers via the member swap.
 int main(int, char**)
