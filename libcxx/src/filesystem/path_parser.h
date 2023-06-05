@@ -21,8 +21,7 @@
 
 _LIBCPP_BEGIN_NAMESPACE_FILESYSTEM
 
-namespace {
-
+inline _LIBCPP_HIDE_FROM_ABI
 bool isSeparator(path::value_type C) {
   if (C == '/')
     return true;
@@ -33,6 +32,7 @@ bool isSeparator(path::value_type C) {
   return false;
 }
 
+inline _LIBCPP_HIDE_FROM_ABI
 bool isDriveLetter(path::value_type C) {
   return (C >= 'a' && C <= 'z') || (C >= 'A' && C <= 'Z');
 }
@@ -59,32 +59,38 @@ struct PathParser {
   ParserState State;
 
 private:
+  _LIBCPP_HIDE_FROM_ABI
   PathParser(string_view_t P, ParserState State) noexcept : Path(P),
                                                             State(State) {}
 
 public:
+  _LIBCPP_HIDE_FROM_ABI
   PathParser(string_view_t P, string_view_t E, unsigned char S)
       : Path(P), RawEntry(E), State(static_cast<ParserState>(S)) {
     // S cannot be '0' or PS_BeforeBegin.
   }
 
+  _LIBCPP_HIDE_FROM_ABI
   static PathParser CreateBegin(string_view_t P) noexcept {
     PathParser PP(P, PS_BeforeBegin);
     PP.increment();
     return PP;
   }
 
+  _LIBCPP_HIDE_FROM_ABI
   static PathParser CreateEnd(string_view_t P) noexcept {
     PathParser PP(P, PS_AtEnd);
     return PP;
   }
 
+  _LIBCPP_HIDE_FROM_ABI
   PosPtr peek() const noexcept {
     auto TkEnd = getNextTokenStartPos();
     auto End = getAfterBack();
     return TkEnd == End ? nullptr : TkEnd;
   }
 
+  _LIBCPP_HIDE_FROM_ABI
   void increment() noexcept {
     const PosPtr End = getAfterBack();
     const PosPtr Start = getNextTokenStartPos();
@@ -126,6 +132,7 @@ public:
     }
   }
 
+  _LIBCPP_HIDE_FROM_ABI
   void decrement() noexcept {
     const PosPtr REnd = getBeforeFront();
     const PosPtr RStart = getCurrentTokenStartPos() - 1;
@@ -176,6 +183,7 @@ public:
 
   /// \brief Return a view with the "preferred representation" of the current
   ///   element. For example trailing separators are represented as a '.'
+  _LIBCPP_HIDE_FROM_ABI
   string_view_t operator*() const noexcept {
     switch (State) {
     case PS_BeforeBegin:
@@ -195,52 +203,62 @@ public:
     __libcpp_unreachable();
   }
 
+  _LIBCPP_HIDE_FROM_ABI
   explicit operator bool() const noexcept {
     return State != PS_BeforeBegin && State != PS_AtEnd;
   }
 
+  _LIBCPP_HIDE_FROM_ABI
   PathParser& operator++() noexcept {
     increment();
     return *this;
   }
 
+  _LIBCPP_HIDE_FROM_ABI
   PathParser& operator--() noexcept {
     decrement();
     return *this;
   }
 
+  _LIBCPP_HIDE_FROM_ABI
   bool atEnd() const noexcept {
     return State == PS_AtEnd;
   }
 
+  _LIBCPP_HIDE_FROM_ABI
   bool inRootDir() const noexcept {
     return State == PS_InRootDir;
   }
 
+  _LIBCPP_HIDE_FROM_ABI
   bool inRootName() const noexcept {
     return State == PS_InRootName;
   }
 
+  _LIBCPP_HIDE_FROM_ABI
   bool inRootPath() const noexcept {
     return inRootName() || inRootDir();
   }
 
 private:
+  _LIBCPP_HIDE_FROM_ABI
   void makeState(ParserState NewState, PosPtr Start, PosPtr End) noexcept {
     State = NewState;
     RawEntry = string_view_t(Start, End - Start);
   }
+  _LIBCPP_HIDE_FROM_ABI
   void makeState(ParserState NewState) noexcept {
     State = NewState;
     RawEntry = {};
   }
 
-  PosPtr getAfterBack() const noexcept { return Path.data() + Path.size(); }
+  _LIBCPP_HIDE_FROM_ABI PosPtr getAfterBack() const noexcept { return Path.data() + Path.size(); }
 
-  PosPtr getBeforeFront() const noexcept { return Path.data() - 1; }
+  _LIBCPP_HIDE_FROM_ABI PosPtr getBeforeFront() const noexcept { return Path.data() - 1; }
 
   /// \brief Return a pointer to the first character after the currently
   ///   lexed element.
+  _LIBCPP_HIDE_FROM_ABI
   PosPtr getNextTokenStartPos() const noexcept {
     switch (State) {
     case PS_BeforeBegin:
@@ -258,6 +276,7 @@ private:
 
   /// \brief Return a pointer to the first character in the currently lexed
   ///   element.
+  _LIBCPP_HIDE_FROM_ABI
   PosPtr getCurrentTokenStartPos() const noexcept {
     switch (State) {
     case PS_BeforeBegin:
@@ -274,6 +293,7 @@ private:
   }
 
   // Consume all consecutive separators.
+  _LIBCPP_HIDE_FROM_ABI
   PosPtr consumeAllSeparators(PosPtr P, PosPtr End) const noexcept {
     if (P == nullptr || P == End || !isSeparator(*P))
       return nullptr;
@@ -285,6 +305,7 @@ private:
   }
 
   // Consume exactly N separators, or return nullptr.
+  _LIBCPP_HIDE_FROM_ABI
   PosPtr consumeNSeparators(PosPtr P, PosPtr End, int N) const noexcept {
     PosPtr Ret = consumeAllSeparators(P, End);
     if (Ret == nullptr)
@@ -299,6 +320,7 @@ private:
     return nullptr;
   }
 
+  _LIBCPP_HIDE_FROM_ABI
   PosPtr consumeName(PosPtr P, PosPtr End) const noexcept {
     PosPtr Start = P;
     if (P == nullptr || P == End || isSeparator(*P))
@@ -318,6 +340,7 @@ private:
     return P;
   }
 
+  _LIBCPP_HIDE_FROM_ABI
   PosPtr consumeDriveLetter(PosPtr P, PosPtr End) const noexcept {
     if (P == End)
       return nullptr;
@@ -332,6 +355,7 @@ private:
     }
   }
 
+  _LIBCPP_HIDE_FROM_ABI
   PosPtr consumeNetworkRoot(PosPtr P, PosPtr End) const noexcept {
     if (P == End)
       return nullptr;
@@ -341,6 +365,7 @@ private:
       return consumeNSeparators(consumeName(P, End), End, 2);
   }
 
+  _LIBCPP_HIDE_FROM_ABI
   PosPtr consumeRootName(PosPtr P, PosPtr End) const noexcept {
 #if defined(_LIBCPP_WIN32API)
     if (PosPtr Ret = consumeDriveLetter(P, End))
@@ -352,6 +377,7 @@ private:
   }
 };
 
+inline _LIBCPP_HIDE_FROM_ABI
 string_view_pair separate_filename(string_view_t const& s) {
   if (s == PATHSTR(".") || s == PATHSTR("..") || s.empty())
     return string_view_pair{s, PATHSTR("")};
@@ -361,12 +387,12 @@ string_view_pair separate_filename(string_view_t const& s) {
   return string_view_pair{s.substr(0, pos), s.substr(pos)};
 }
 
+inline _LIBCPP_HIDE_FROM_ABI
 string_view_t createView(PosPtr S, PosPtr E) noexcept {
   return {S, static_cast<size_t>(E - S) + 1};
 }
 
 } // namespace parser
-} // namespace
 
 _LIBCPP_END_NAMESPACE_FILESYSTEM
 
