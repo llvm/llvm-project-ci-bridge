@@ -9,9 +9,8 @@
 #include <filesystem>
 #include <vector>
 
-#include "filesystem_common.h"
+#include "error.h"
 #include "path_parser.h"
-#include "posix_compat.h"
 
 _LIBCPP_BEGIN_NAMESPACE_FILESYSTEM
 
