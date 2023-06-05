@@ -75,7 +75,6 @@ struct LIBCPP_REPARSE_DATA_BUFFER {
 _LIBCPP_BEGIN_NAMESPACE_FILESYSTEM
 
 namespace detail {
-namespace {
 
 #if defined(_LIBCPP_WIN32API)
 
@@ -124,6 +123,7 @@ namespace {
 // (1601) to the Unix epoch (1970).
 #define FILE_TIME_OFFSET_SECS (uint64_t(369 * 365 + 89) * (24 * 60 * 60))
 
+inline _LIBCPP_HIDE_FROM_ABI
 TimeSpec filetime_to_timespec(LARGE_INTEGER li) {
   TimeSpec ret;
   ret.tv_sec = li.QuadPart / 10000000 - FILE_TIME_OFFSET_SECS;
@@ -131,6 +131,7 @@ TimeSpec filetime_to_timespec(LARGE_INTEGER li) {
   return ret;
 }
 
+inline _LIBCPP_HIDE_FROM_ABI
 TimeSpec filetime_to_timespec(FILETIME ft) {
   LARGE_INTEGER li;
   li.LowPart = ft.dwLowDateTime;
@@ -138,6 +139,7 @@ TimeSpec filetime_to_timespec(FILETIME ft) {
   return filetime_to_timespec(li);
 }
 
+inline _LIBCPP_HIDE_FROM_ABI
 FILETIME timespec_to_filetime(TimeSpec ts) {
   LARGE_INTEGER li;
   li.QuadPart =
@@ -148,6 +150,7 @@ FILETIME timespec_to_filetime(TimeSpec ts) {
   return ft;
 }
 
+inline _LIBCPP_HIDE_FROM_ABI
 int set_errno(int e = GetLastError()) {
   errno = static_cast<int>(__win_err_to_errc(e));
   return -1;
@@ -155,22 +158,25 @@ int set_errno(int e = GetLastError()) {
 
 class WinHandle {
 public:
+  _LIBCPP_HIDE_FROM_ABI
   WinHandle(const wchar_t *p, DWORD access, DWORD flags) {
     h = CreateFileW(
         p, access, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
         nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | flags, nullptr);
   }
+  _LIBCPP_HIDE_FROM_ABI
   ~WinHandle() {
     if (h != INVALID_HANDLE_VALUE)
       CloseHandle(h);
   }
-  operator HANDLE() const { return h; }
-  operator bool() const { return h != INVALID_HANDLE_VALUE; }
+  _LIBCPP_HIDE_FROM_ABI operator HANDLE() const { return h; }
+  _LIBCPP_HIDE_FROM_ABI operator bool() const { return h != INVALID_HANDLE_VALUE; }
 
 private:
   HANDLE h;
 };
 
+inline _LIBCPP_HIDE_FROM_ABI
 int stat_handle(HANDLE h, StatT *buf) {
   FILE_BASIC_INFO basic;
   if (!GetFileInformationByHandleEx(h, FileBasicInfo, &basic, sizeof(basic)))
@@ -209,6 +215,7 @@ int stat_handle(HANDLE h, StatT *buf) {
   return 0;
 }
 
+inline _LIBCPP_HIDE_FROM_ABI
 int stat_file(const wchar_t *path, StatT *buf, DWORD flags) {
   WinHandle h(path, FILE_READ_ATTRIBUTES, flags);
   if (!h)
@@ -217,22 +224,27 @@ int stat_file(const wchar_t *path, StatT *buf, DWORD flags) {
   return ret;
 }
 
+inline _LIBCPP_HIDE_FROM_ABI
 int stat(const wchar_t *path, StatT *buf) { return stat_file(path, buf, 0); }
 
+inline _LIBCPP_HIDE_FROM_ABI
 int lstat(const wchar_t *path, StatT *buf) {
   return stat_file(path, buf, FILE_FLAG_OPEN_REPARSE_POINT);
 }
 
+inline _LIBCPP_HIDE_FROM_ABI
 int fstat(int fd, StatT *buf) {
   HANDLE h = reinterpret_cast<HANDLE>(_get_osfhandle(fd));
   return stat_handle(h, buf);
 }
 
+inline _LIBCPP_HIDE_FROM_ABI
 int mkdir(const wchar_t *path, int permissions) {
   (void)permissions;
   return _wmkdir(path);
 }
 
+inline _LIBCPP_HIDE_FROM_ABI
 int symlink_file_dir(const wchar_t *oldname, const wchar_t *newname,
                      bool is_dir) {
   path dest(oldname);
@@ -250,20 +262,24 @@ int symlink_file_dir(const wchar_t *oldname, const wchar_t *newname,
   return set_errno();
 }
 
+inline _LIBCPP_HIDE_FROM_ABI
 int symlink_file(const wchar_t *oldname, const wchar_t *newname) {
   return symlink_file_dir(oldname, newname, false);
 }
 
+inline _LIBCPP_HIDE_FROM_ABI
 int symlink_dir(const wchar_t *oldname, const wchar_t *newname) {
   return symlink_file_dir(oldname, newname, true);
 }
 
+inline _LIBCPP_HIDE_FROM_ABI
 int link(const wchar_t *oldname, const wchar_t *newname) {
   if (CreateHardLinkW(newname, oldname, nullptr))
     return 0;
   return set_errno();
 }
 
+inline _LIBCPP_HIDE_FROM_ABI
 int remove(const wchar_t *path) {
   detail::WinHandle h(path, DELETE, FILE_FLAG_OPEN_REPARSE_POINT);
   if (!h)
@@ -275,6 +291,7 @@ int remove(const wchar_t *path) {
   return 0;
 }
 
+inline _LIBCPP_HIDE_FROM_ABI
 int truncate_handle(HANDLE h, off_t length) {
   LARGE_INTEGER size_param;
   size_param.QuadPart = length;
@@ -285,11 +302,13 @@ int truncate_handle(HANDLE h, off_t length) {
   return 0;
 }
 
+inline _LIBCPP_HIDE_FROM_ABI
 int ftruncate(int fd, off_t length) {
   HANDLE h = reinterpret_cast<HANDLE>(_get_osfhandle(fd));
   return truncate_handle(h, length);
 }
 
+inline _LIBCPP_HIDE_FROM_ABI
 int truncate(const wchar_t *path, off_t length) {
   detail::WinHandle h(path, GENERIC_WRITE, 0);
   if (!h)
@@ -297,6 +316,7 @@ int truncate(const wchar_t *path, off_t length) {
   return truncate_handle(h, length);
 }
 
+inline _LIBCPP_HIDE_FROM_ABI
 int rename(const wchar_t *from, const wchar_t *to) {
   if (!(MoveFileExW(from, to,
                     MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING |
@@ -305,11 +325,12 @@ int rename(const wchar_t *from, const wchar_t *to) {
   return 0;
 }
 
-template <class... Args> int open(const wchar_t *filename, Args... args) {
+template <class... Args>
+_LIBCPP_HIDE_FROM_ABI int open(const wchar_t *filename, Args... args) {
   return _wopen(filename, args...);
 }
-int close(int fd) { return _close(fd); }
-int chdir(const wchar_t *path) { return _wchdir(path); }
+inline _LIBCPP_HIDE_FROM_ABI int close(int fd) { return _close(fd); }
+inline _LIBCPP_HIDE_FROM_ABI int chdir(const wchar_t *path) { return _wchdir(path); }
 
 struct StatVFS {
   uint64_t f_frsize;
@@ -318,6 +339,7 @@ struct StatVFS {
   uint64_t f_bavail;
 };
 
+inline _LIBCPP_HIDE_FROM_ABI
 int statvfs(const wchar_t *p, StatVFS *buf) {
   path dir = p;
   while (true) {
@@ -344,8 +366,10 @@ int statvfs(const wchar_t *p, StatVFS *buf) {
   return 0;
 }
 
+inline _LIBCPP_HIDE_FROM_ABI
 wchar_t *getcwd(wchar_t *buff, size_t size) { return _wgetcwd(buff, size); }
 
+inline _LIBCPP_HIDE_FROM_ABI
 wchar_t *realpath(const wchar_t *path, wchar_t *resolved_name) {
   // Only expected to be used with us allocating the buffer.
   _LIBCPP_ASSERT(resolved_name == nullptr,
@@ -387,6 +411,7 @@ wchar_t *realpath(const wchar_t *path, wchar_t *resolved_name) {
 #define AT_SYMLINK_NOFOLLOW 1
 using ModeT = int;
 
+inline _LIBCPP_HIDE_FROM_ABI
 int fchmod_handle(HANDLE h, int perms) {
   FILE_BASIC_INFO basic;
   if (!GetFileInformationByHandleEx(h, FileBasicInfo, &basic, sizeof(basic)))
@@ -401,6 +426,7 @@ int fchmod_handle(HANDLE h, int perms) {
   return 0;
 }
 
+inline _LIBCPP_HIDE_FROM_ABI
 int fchmodat(int fd, const wchar_t *path, int perms, int flag) {
   DWORD attributes = GetFileAttributesW(path);
   if (attributes == INVALID_FILE_ATTRIBUTES)
@@ -428,6 +454,7 @@ int fchmodat(int fd, const wchar_t *path, int perms, int flag) {
   return 0;
 }
 
+inline _LIBCPP_HIDE_FROM_ABI
 int fchmod(int fd, int perms) {
   HANDLE h = reinterpret_cast<HANDLE>(_get_osfhandle(fd));
   return fchmod_handle(h, perms);
@@ -436,6 +463,7 @@ int fchmod(int fd, int perms) {
 #define MAX_SYMLINK_SIZE MAXIMUM_REPARSE_DATA_BUFFER_SIZE
 using SSizeT = ::int64_t;
 
+inline _LIBCPP_HIDE_FROM_ABI
 SSizeT readlink(const wchar_t *path, wchar_t *ret_buf, size_t bufsize) {
   uint8_t buf[MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
   detail::WinHandle h(path, FILE_READ_ATTRIBUTES, FILE_FLAG_OPEN_REPARSE_POINT);
@@ -480,9 +508,11 @@ SSizeT readlink(const wchar_t *path, wchar_t *ret_buf, size_t bufsize) {
 }
 
 #else
+inline _LIBCPP_HIDE_FROM_ABI
 int symlink_file(const char *oldname, const char *newname) {
   return ::symlink(oldname, newname);
 }
+inline _LIBCPP_HIDE_FROM_ABI
 int symlink_dir(const char *oldname, const char *newname) {
   return ::symlink(oldname, newname);
 }
@@ -515,7 +545,6 @@ using SSizeT = ::ssize_t;
 
 #endif
 
-} // namespace
 } // end namespace detail
 
 _LIBCPP_END_NAMESPACE_FILESYSTEM

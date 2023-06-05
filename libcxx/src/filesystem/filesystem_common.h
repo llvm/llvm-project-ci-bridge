@@ -42,12 +42,6 @@
 # define _LIBCPP_USE_UTIMENSAT
 #endif
 
-// TODO: Check whether these functions actually need internal linkage, or if they can be made normal header functions
-_LIBCPP_DIAGNOSTIC_PUSH
-_LIBCPP_GCC_DIAGNOSTIC_IGNORED("-Wunused-function")
-_LIBCPP_CLANG_DIAGNOSTIC_IGNORED("-Wunused-function")
-_LIBCPP_CLANG_DIAGNOSTIC_IGNORED("-Wunused-template")
-
 #if defined(_LIBCPP_WIN32API)
 #  define PATHSTR(x) (L##x)
 #  define PATH_CSTR_FMT "\"%ls\""
@@ -62,12 +56,10 @@ namespace detail {
 
 #if defined(_LIBCPP_WIN32API)
 // Non anonymous, to allow access from two translation units.
-errc __win_err_to_errc(int err);
+_LIBCPP_HIDE_FROM_ABI errc __win_err_to_errc(int err);
 #endif
 
-namespace {
-
-static _LIBCPP_ATTRIBUTE_FORMAT(__printf__, 1, 0) string
+inline _LIBCPP_HIDE_FROM_ABI _LIBCPP_ATTRIBUTE_FORMAT(__printf__, 1, 0) string
 format_string_impl(const char* msg, va_list ap) {
   array<char, 256> buf;
 
@@ -91,7 +83,7 @@ format_string_impl(const char* msg, va_list ap) {
   return result;
 }
 
-static _LIBCPP_ATTRIBUTE_FORMAT(__printf__, 1, 2) string
+inline _LIBCPP_HIDE_FROM_ABI _LIBCPP_ATTRIBUTE_FORMAT(__printf__, 1, 2) string
 format_string(const char* msg, ...) {
   string ret;
   va_list ap;
@@ -110,41 +102,41 @@ format_string(const char* msg, ...) {
   return ret;
 }
 
-error_code capture_errno() {
+inline _LIBCPP_HIDE_FROM_ABI error_code capture_errno() {
   _LIBCPP_ASSERT(errno != 0, "Expected errno to be non-zero");
   return error_code(errno, generic_category());
 }
 
 #if defined(_LIBCPP_WIN32API)
-error_code make_windows_error(int err) {
+inline _LIBCPP_HIDE_FROM_ABI error_code make_windows_error(int err) {
   return make_error_code(__win_err_to_errc(err));
 }
 #endif
 
 template <class T>
-T error_value();
+_LIBCPP_HIDE_FROM_ABI T error_value();
 template <>
-_LIBCPP_CONSTEXPR_SINCE_CXX14 void error_value<void>() {}
+inline _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX14 void error_value<void>() {}
 template <>
-bool error_value<bool>() {
+inline _LIBCPP_HIDE_FROM_ABI bool error_value<bool>() {
   return false;
 }
 #if __SIZEOF_SIZE_T__ != __SIZEOF_LONG_LONG__
 template <>
-size_t error_value<size_t>() {
+inline _LIBCPP_HIDE_FROM_ABI size_t error_value<size_t>() {
   return size_t(-1);
 }
 #endif
 template <>
-uintmax_t error_value<uintmax_t>() {
+inline _LIBCPP_HIDE_FROM_ABI uintmax_t error_value<uintmax_t>() {
   return uintmax_t(-1);
 }
 template <>
-_LIBCPP_CONSTEXPR_SINCE_CXX14 file_time_type error_value<file_time_type>() {
+inline _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX14 file_time_type error_value<file_time_type>() {
   return file_time_type::min();
 }
 template <>
-path error_value<path>() {
+inline _LIBCPP_HIDE_FROM_ABI path error_value<path>() {
   return {};
 }
 
@@ -155,6 +147,7 @@ struct ErrorHandler {
   const path* p1_ = nullptr;
   const path* p2_ = nullptr;
 
+  _LIBCPP_HIDE_FROM_ABI
   ErrorHandler(const char* fname, error_code* ec, const path* p1 = nullptr,
                const path* p2 = nullptr)
       : func_name_(fname), ec_(ec), p1_(p1), p2_(p2) {
@@ -162,6 +155,7 @@ struct ErrorHandler {
       ec_->clear();
   }
 
+  _LIBCPP_HIDE_FROM_ABI
   T report(const error_code& ec) const {
     if (ec_) {
       *ec_ = ec;
@@ -179,7 +173,7 @@ struct ErrorHandler {
     __libcpp_unreachable();
   }
 
-  _LIBCPP_ATTRIBUTE_FORMAT(__printf__, 3, 0)
+  _LIBCPP_HIDE_FROM_ABI _LIBCPP_ATTRIBUTE_FORMAT(__printf__, 3, 0)
   void report_impl(const error_code& ec, const char* msg, va_list ap) const {
     if (ec_) {
       *ec_ = ec;
@@ -198,7 +192,7 @@ struct ErrorHandler {
     __libcpp_unreachable();
   }
 
-  _LIBCPP_ATTRIBUTE_FORMAT(__printf__, 3, 4)
+  _LIBCPP_HIDE_FROM_ABI _LIBCPP_ATTRIBUTE_FORMAT(__printf__, 3, 4)
   T report(const error_code& ec, const char* msg, ...) const {
     va_list ap;
     va_start(ap, msg);
@@ -216,11 +210,12 @@ struct ErrorHandler {
     return error_value<T>();
   }
 
+  _LIBCPP_HIDE_FROM_ABI
   T report(errc const& err) const {
     return report(make_error_code(err));
   }
 
-  _LIBCPP_ATTRIBUTE_FORMAT(__printf__, 3, 4)
+  _LIBCPP_HIDE_FROM_ABI _LIBCPP_ATTRIBUTE_FORMAT(__printf__, 3, 4)
   T report(errc const& err, const char* msg, ...) const {
     va_list ap;
     va_start(ap, msg);
@@ -265,6 +260,7 @@ struct StatT {
   uint64_t st_dev; // FILE_ID_INFO::VolumeSerialNumber
   struct FileIdStruct {
     unsigned char id[16]; // FILE_ID_INFO::FileId
+    _LIBCPP_HIDE_FROM_ABI
     bool operator==(const FileIdStruct &other) const {
       for (int i = 0; i < 16; i++)
         if (id[i] != other.id[i])
@@ -309,7 +305,7 @@ struct time_util_base {
           .count();
 
 private:
-  static _LIBCPP_CONSTEXPR_SINCE_CXX14 fs_duration get_min_nsecs() {
+  static _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX14 fs_duration get_min_nsecs() {
     return duration_cast<fs_duration>(
         fs_nanoseconds(min_nsec_timespec) -
         duration_cast<fs_nanoseconds>(fs_seconds(1)));
@@ -319,7 +315,7 @@ private:
                     FileTimeT::duration::min(),
                 "value doesn't roundtrip");
 
-  static _LIBCPP_CONSTEXPR_SINCE_CXX14 bool check_range() {
+  static _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX14 bool check_range() {
     // This kinda sucks, but it's what happens when we don't have __int128_t.
     if (sizeof(TimeT) == sizeof(rep)) {
       typedef duration<long long, ratio<3600 * 24 * 365> > Years;
@@ -385,8 +381,8 @@ struct time_util : time_util_base<FileTimeT, TimeT> {
 
 public:
   template <class CType, class ChronoType>
-  static _LIBCPP_CONSTEXPR_SINCE_CXX14 bool checked_set(CType* out,
-                                                        ChronoType time) {
+  static _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX14
+  bool checked_set(CType* out, ChronoType time) {
     using Lim = numeric_limits<CType>;
     if (time > Lim::max() || time < Lim::min())
       return false;
@@ -394,7 +390,8 @@ public:
     return true;
   }
 
-  static _LIBCPP_CONSTEXPR_SINCE_CXX14 bool is_representable(TimeSpecT tm) {
+  static _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX14
+  bool is_representable(TimeSpecT tm) {
     if (tm.tv_sec >= 0) {
       return tm.tv_sec < max_seconds ||
              (tm.tv_sec == max_seconds && tm.tv_nsec <= max_nsec);
@@ -405,7 +402,8 @@ public:
     }
   }
 
-  static _LIBCPP_CONSTEXPR_SINCE_CXX14 bool is_representable(FileTimeT tm) {
+  static _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX14
+  bool is_representable(FileTimeT tm) {
     auto secs = duration_cast<fs_seconds>(tm.time_since_epoch());
     auto nsecs = duration_cast<fs_nanoseconds>(tm.time_since_epoch() - secs);
     if (nsecs.count() < 0) {
@@ -418,8 +416,8 @@ public:
     return secs.count() >= TLim::min();
   }
 
-  static _LIBCPP_CONSTEXPR_SINCE_CXX14 FileTimeT
-  convert_from_timespec(TimeSpecT tm) {
+  static _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX14
+  FileTimeT convert_from_timespec(TimeSpecT tm) {
     if (tm.tv_sec >= 0 || tm.tv_nsec == 0) {
       return FileTimeT(fs_seconds(tm.tv_sec) +
                        duration_cast<fs_duration>(fs_nanoseconds(tm.tv_nsec)));
@@ -432,8 +430,8 @@ public:
   }
 
   template <class SubSecT>
-  static _LIBCPP_CONSTEXPR_SINCE_CXX14 bool
-  set_times_checked(TimeT* sec_out, SubSecT* subsec_out, FileTimeT tp) {
+  static _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX14
+  bool set_times_checked(TimeT* sec_out, SubSecT* subsec_out, FileTimeT tp) {
     auto dur = tp.time_since_epoch();
     auto sec_dur = duration_cast<fs_seconds>(dur);
     auto subsec_dur = duration_cast<fs_nanoseconds>(dur - sec_dur);
@@ -449,8 +447,8 @@ public:
     return checked_set(sec_out, sec_dur.count()) &&
            checked_set(subsec_out, subsec_dur.count());
   }
-  static _LIBCPP_CONSTEXPR_SINCE_CXX14 bool convert_to_timespec(TimeSpecT& dest,
-                                                                FileTimeT tp) {
+  static _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX14
+  bool convert_to_timespec(TimeSpecT& dest, FileTimeT tp) {
     if (!is_representable(tp))
       return false;
     return set_times_checked(&dest.tv_sec, &dest.tv_nsec, tp);
@@ -464,33 +462,34 @@ using fs_time = time_util<file_time_type, time_t, TimeSpec>;
 #endif
 
 #if defined(__APPLE__)
-inline TimeSpec extract_mtime(StatT const& st) { return st.st_mtimespec; }
-inline TimeSpec extract_atime(StatT const& st) { return st.st_atimespec; }
+inline _LIBCPP_HIDE_FROM_ABI TimeSpec extract_mtime(StatT const& st) { return st.st_mtimespec; }
+inline _LIBCPP_HIDE_FROM_ABI TimeSpec extract_atime(StatT const& st) { return st.st_atimespec; }
 #elif defined(__MVS__)
-inline TimeSpec extract_mtime(StatT const& st) {
+inline _LIBCPP_HIDE_FROM_ABI TimeSpec extract_mtime(StatT const& st) {
   TimeSpec TS = {st.st_mtime, 0};
   return TS;
 }
-inline TimeSpec extract_atime(StatT const& st) {
+inline _LIBCPP_HIDE_FROM_ABI TimeSpec extract_atime(StatT const& st) {
   TimeSpec TS = {st.st_atime, 0};
   return TS;
 }
 #elif defined(_AIX)
-inline TimeSpec extract_mtime(StatT const& st) {
+inline _LIBCPP_HIDE_FROM_ABI TimeSpec extract_mtime(StatT const& st) {
   TimeSpec TS = {st.st_mtime, st.st_mtime_n};
   return TS;
 }
-inline TimeSpec extract_atime(StatT const& st) {
+inline _LIBCPP_HIDE_FROM_ABI TimeSpec extract_atime(StatT const& st) {
   TimeSpec TS = {st.st_atime, st.st_atime_n};
   return TS;
 }
 #else
-inline TimeSpec extract_mtime(StatT const& st) { return st.st_mtim; }
-inline TimeSpec extract_atime(StatT const& st) { return st.st_atim; }
+inline _LIBCPP_HIDE_FROM_ABI TimeSpec extract_mtime(StatT const& st) { return st.st_mtim; }
+inline _LIBCPP_HIDE_FROM_ABI TimeSpec extract_atime(StatT const& st) { return st.st_atim; }
 #endif
 
 #if !defined(_LIBCPP_WIN32API)
-inline TimeVal make_timeval(TimeSpec const& ts) {
+inline _LIBCPP_HIDE_FROM_ABI
+TimeVal make_timeval(TimeSpec const& ts) {
   using namespace chrono;
   auto Convert = [](long nsec) {
     using int_type = decltype(std::declval<TimeVal>().tv_usec);
@@ -503,7 +502,8 @@ inline TimeVal make_timeval(TimeSpec const& ts) {
   return TV;
 }
 
-inline bool posix_utimes(const path& p, std::array<TimeSpec, 2> const& TS,
+inline _LIBCPP_HIDE_FROM_ABI
+bool posix_utimes(const path& p, std::array<TimeSpec, 2> const& TS,
                   error_code& ec) {
   TimeVal ConvertedTS[2] = {make_timeval(TS[0]), make_timeval(TS[1])};
   if (::utimes(p.c_str(), ConvertedTS) == -1) {
@@ -514,6 +514,7 @@ inline bool posix_utimes(const path& p, std::array<TimeSpec, 2> const& TS,
 }
 
 #if defined(_LIBCPP_USE_UTIMENSAT)
+inline _LIBCPP_HIDE_FROM_ABI
 bool posix_utimensat(const path& p, std::array<TimeSpec, 2> const& TS,
                      error_code& ec) {
   if (::utimensat(AT_FDCWD, p.c_str(), TS.data(), 0) == -1) {
@@ -524,6 +525,7 @@ bool posix_utimensat(const path& p, std::array<TimeSpec, 2> const& TS,
 }
 #endif
 
+inline _LIBCPP_HIDE_FROM_ABI
 bool set_file_times(const path& p, std::array<TimeSpec, 2> const& TS,
                     error_code& ec) {
 #if !defined(_LIBCPP_USE_UTIMENSAT)
@@ -535,7 +537,7 @@ bool set_file_times(const path& p, std::array<TimeSpec, 2> const& TS,
 
 #if defined(DT_BLK)
 template <class DirEntT, class = decltype(DirEntT::d_type)>
-static file_type get_file_type(DirEntT* ent, int) {
+_LIBCPP_HIDE_FROM_ABI file_type get_file_type(DirEntT* ent, int) {
   switch (ent->d_type) {
   case DT_BLK:
     return file_type::block;
@@ -562,12 +564,13 @@ static file_type get_file_type(DirEntT* ent, int) {
 #endif // defined(DT_BLK)
 
 template <class DirEntT>
-static file_type get_file_type(DirEntT*, long) {
+_LIBCPP_HIDE_FROM_ABI file_type get_file_type(DirEntT*, long) {
   return file_type::none;
 }
 
-static pair<string_view, file_type> posix_readdir(DIR* dir_stream,
-                                                  error_code& ec) {
+inline _LIBCPP_HIDE_FROM_ABI
+pair<string_view, file_type> posix_readdir(DIR* dir_stream,
+                                           error_code& ec) {
   struct dirent* dir_entry_ptr = nullptr;
   errno = 0; // zero errno in order to detect errors
   ec.clear();
@@ -582,7 +585,8 @@ static pair<string_view, file_type> posix_readdir(DIR* dir_stream,
 
 #else // _LIBCPP_WIN32API
 
-static file_type get_file_type(const WIN32_FIND_DATAW& data) {
+inline _LIBCPP_HIDE_FROM_ABI
+file_type get_file_type(const WIN32_FIND_DATAW& data) {
   if (data.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
       data.dwReserved0 == IO_REPARSE_TAG_SYMLINK)
     return file_type::symlink;
@@ -590,10 +594,12 @@ static file_type get_file_type(const WIN32_FIND_DATAW& data) {
     return file_type::directory;
   return file_type::regular;
 }
-static uintmax_t get_file_size(const WIN32_FIND_DATAW& data) {
+inline _LIBCPP_HIDE_FROM_ABI
+uintmax_t get_file_size(const WIN32_FIND_DATAW& data) {
   return (static_cast<uint64_t>(data.nFileSizeHigh) << 32) + data.nFileSizeLow;
 }
-static file_time_type get_write_time(const WIN32_FIND_DATAW& data) {
+inline _LIBCPP_HIDE_FROM_ABI
+file_time_type get_write_time(const WIN32_FIND_DATAW& data) {
   ULARGE_INTEGER tmp;
   const FILETIME& time = data.ftLastWriteTime;
   tmp.u.LowPart = time.dwLowDateTime;
@@ -603,8 +609,9 @@ static file_time_type get_write_time(const WIN32_FIND_DATAW& data) {
 
 #endif // !_LIBCPP_WIN32API
 
-file_time_type __extract_last_write_time(const path& p, const StatT& st,
-                                         error_code* ec) {
+inline file_time_type _LIBCPP_HIDE_FROM_ABI
+__extract_last_write_time(const path& p, const StatT& st,
+                          error_code* ec) {
   using detail::fs_time;
   ErrorHandler<file_time_type> err("last_write_time", ec, &p);
 
@@ -618,8 +625,8 @@ file_time_type __extract_last_write_time(const path& p, const StatT& st,
 //                       POSIX HELPERS
 
 #if defined(_LIBCPP_WIN32API)
-namespace detail {
 
+inline _LIBCPP_HIDE_FROM_ABI
 errc __win_err_to_errc(int err) {
   constexpr struct {
     DWORD win;
@@ -682,7 +689,6 @@ errc __win_err_to_errc(int err) {
   return errc::invalid_argument;
 }
 
-} // namespace detail
 #endif
 
 using value_type = path::value_type;
@@ -695,7 +701,8 @@ struct FileDescriptor {
   file_status m_status;
 
   template <class... Args>
-  static FileDescriptor create(const path* p, error_code& ec, Args... args) {
+  static _LIBCPP_HIDE_FROM_ABI
+  FileDescriptor create(const path* p, error_code& ec, Args... args) {
     ec.clear();
     int fd;
     if ((fd = detail::open(p->c_str(), args...)) == -1) {
@@ -706,7 +713,8 @@ struct FileDescriptor {
   }
 
   template <class... Args>
-  static FileDescriptor create_with_status(const path* p, error_code& ec,
+  static _LIBCPP_HIDE_FROM_ABI
+  FileDescriptor create_with_status(const path* p, error_code& ec,
                                            Args... args) {
     FileDescriptor fd = create(p, ec, args...);
     if (!ec)
@@ -715,19 +723,21 @@ struct FileDescriptor {
     return fd;
   }
 
-  file_status get_status() const { return m_status; }
-  StatT const& get_stat() const { return m_stat; }
+  _LIBCPP_HIDE_FROM_ABI file_status get_status() const { return m_status; }
+  _LIBCPP_HIDE_FROM_ABI StatT const& get_stat() const { return m_stat; }
 
-  bool status_known() const { return _VSTD_FS::status_known(m_status); }
+  _LIBCPP_HIDE_FROM_ABI bool status_known() const { return _VSTD_FS::status_known(m_status); }
 
-  file_status refresh_status(error_code& ec);
+  _LIBCPP_HIDE_FROM_ABI file_status refresh_status(error_code& ec);
 
+  _LIBCPP_HIDE_FROM_ABI
   void close() noexcept {
     if (fd != -1)
       detail::close(fd);
     fd = -1;
   }
 
+  _LIBCPP_HIDE_FROM_ABI
   FileDescriptor(FileDescriptor&& other)
       : name(other.name), fd(other.fd), m_stat(other.m_stat),
         m_status(other.m_status) {
@@ -735,19 +745,21 @@ struct FileDescriptor {
     other.m_status = file_status{};
   }
 
-  ~FileDescriptor() { close(); }
+  _LIBCPP_HIDE_FROM_ABI ~FileDescriptor() { close(); }
 
   FileDescriptor(FileDescriptor const&) = delete;
   FileDescriptor& operator=(FileDescriptor const&) = delete;
 
 private:
-  explicit FileDescriptor(const path* p, int fd = -1) : name(*p), fd(fd) {}
+  _LIBCPP_HIDE_FROM_ABI explicit FileDescriptor(const path* p, int fd = -1) : name(*p), fd(fd) {}
 };
 
+inline _LIBCPP_HIDE_FROM_ABI
 perms posix_get_perms(const StatT& st) noexcept {
   return static_cast<perms>(st.st_mode) & perms::mask;
 }
 
+inline _LIBCPP_HIDE_FROM_ABI
 file_status create_file_status(error_code& m_ec, path const& p,
                                const StatT& path_stat, error_code* ec) {
   if (ec)
@@ -784,6 +796,7 @@ file_status create_file_status(error_code& m_ec, path const& p,
   return fs_tmp;
 }
 
+inline _LIBCPP_HIDE_FROM_ABI
 file_status posix_stat(path const& p, StatT& path_stat, error_code* ec) {
   error_code m_ec;
   if (detail::stat(p.c_str(), &path_stat) == -1)
@@ -791,11 +804,13 @@ file_status posix_stat(path const& p, StatT& path_stat, error_code* ec) {
   return create_file_status(m_ec, p, path_stat, ec);
 }
 
+inline _LIBCPP_HIDE_FROM_ABI
 file_status posix_stat(path const& p, error_code* ec) {
   StatT path_stat;
   return posix_stat(p, path_stat, ec);
 }
 
+inline _LIBCPP_HIDE_FROM_ABI
 file_status posix_lstat(path const& p, StatT& path_stat, error_code* ec) {
   error_code m_ec;
   if (detail::lstat(p.c_str(), &path_stat) == -1)
@@ -803,12 +818,14 @@ file_status posix_lstat(path const& p, StatT& path_stat, error_code* ec) {
   return create_file_status(m_ec, p, path_stat, ec);
 }
 
+inline _LIBCPP_HIDE_FROM_ABI
 file_status posix_lstat(path const& p, error_code* ec) {
   StatT path_stat;
   return posix_lstat(p, path_stat, ec);
 }
 
 // http://pubs.opengroup.org/onlinepubs/9699919799/functions/ftruncate.html
+inline _LIBCPP_HIDE_FROM_ABI
 bool posix_ftruncate(const FileDescriptor& fd, off_t to_size, error_code& ec) {
   if (detail::ftruncate(fd.fd, to_size) == -1) {
     ec = capture_errno();
@@ -818,6 +835,7 @@ bool posix_ftruncate(const FileDescriptor& fd, off_t to_size, error_code& ec) {
   return false;
 }
 
+inline _LIBCPP_HIDE_FROM_ABI
 bool posix_fchmod(const FileDescriptor& fd, const StatT& st, error_code& ec) {
   if (detail::fchmod(fd.fd, st.st_mode) == -1) {
     ec = capture_errno();
@@ -827,10 +845,12 @@ bool posix_fchmod(const FileDescriptor& fd, const StatT& st, error_code& ec) {
   return false;
 }
 
+inline _LIBCPP_HIDE_FROM_ABI
 bool stat_equivalent(const StatT& st1, const StatT& st2) {
   return (st1.st_dev == st2.st_dev && st1.st_ino == st2.st_ino);
 }
 
+inline _LIBCPP_HIDE_FROM_ABI
 file_status FileDescriptor::refresh_status(error_code& ec) {
   // FD must be open and good.
   m_status = file_status{};
@@ -842,11 +862,8 @@ file_status FileDescriptor::refresh_status(error_code& ec) {
   return m_status;
 }
 
-} // namespace
 } // end namespace detail
 
 _LIBCPP_END_NAMESPACE_FILESYSTEM
-
-_LIBCPP_DIAGNOSTIC_POP
 
 #endif // FILESYSTEM_COMMON_H
