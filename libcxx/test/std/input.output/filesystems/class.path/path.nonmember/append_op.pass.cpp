@@ -17,7 +17,6 @@
 #include <cassert>
 
 #include "test_macros.h"
-#include "filesystem_test_helper.h"
 
 // This is mainly tested via the member append functions.
 int main(int, char**)

@@ -23,8 +23,6 @@
 
 _LIBCPP_BEGIN_NAMESPACE_FILESYSTEM
 
-_LIBCPP_AVAILABILITY_FILESYSTEM_LIBRARY_PUSH
-
 class _LIBCPP_TYPE_VIS file_status {
 public:
   // constructors
@@ -62,8 +60,6 @@ private:
   file_type __ft_;
   perms __prms_;
 };
-
-_LIBCPP_AVAILABILITY_FILESYSTEM_LIBRARY_POP
 
 _LIBCPP_END_NAMESPACE_FILESYSTEM
 

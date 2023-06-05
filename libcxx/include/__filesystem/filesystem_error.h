@@ -82,12 +82,8 @@ private:
   shared_ptr<_Storage> __storage_;
 };
 
-// TODO(ldionne): We need to pop the pragma and push it again after
-//                filesystem_error to work around PR41078.
-_LIBCPP_AVAILABILITY_FILESYSTEM_LIBRARY_PUSH
-
 template <class... _Args>
-_LIBCPP_NORETURN inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_NORETURN inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_AVAILABILITY_FILESYSTEM_LIBRARY
 #ifndef _LIBCPP_HAS_NO_EXCEPTIONS
 void __throw_filesystem_error(_Args&&... __args) {
   throw filesystem_error(_VSTD::forward<_Args>(__args)...);
@@ -97,7 +93,6 @@ void __throw_filesystem_error(_Args&&...) {
     _LIBCPP_VERBOSE_ABORT("filesystem_error was thrown in -fno-exceptions mode");
 }
 #endif
-_LIBCPP_AVAILABILITY_FILESYSTEM_LIBRARY_POP
 
 _LIBCPP_END_NAMESPACE_FILESYSTEM
 

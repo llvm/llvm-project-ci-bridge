@@ -23,7 +23,6 @@
 #include "count_new.h"
 #include "filesystem_test_helper.h"
 
-
 int main(int, char**) {
   // clang-format off
   struct {

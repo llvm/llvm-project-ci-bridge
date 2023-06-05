@@ -12,6 +12,10 @@ set(LIBCXX_SOURCES
   condition_variable.cpp
   condition_variable_destructor.cpp
   exception.cpp
+  filesystem/filesystem_clock.cpp
+  filesystem/filesystem_error.cpp
+  filesystem/path_parser.h
+  filesystem/path.cpp
   functional.cpp
   future.cpp
   hash.cpp
@@ -112,12 +116,8 @@ if (LIBCXX_ENABLE_FILESYSTEM)
   list(APPEND LIBCXX_SOURCES
     filesystem/directory_entry.cpp
     filesystem/directory_iterator.cpp
-    filesystem/filesystem_clock.cpp
     filesystem/filesystem_common.h
-    filesystem/filesystem_error.cpp
     filesystem/operations.cpp
-    filesystem/path_parser.h
-    filesystem/path.cpp
     filesystem/posix_compat.h
     )
   # Filesystem uses __int128_t, which requires a definition of __muloi4 when
