@@ -22,6 +22,7 @@
 #include <utility>
 #include <system_error>
 
+#include "format_string.h"
 #include "posix_compat.h"
 
 #if defined(_LIBCPP_WIN32API)
@@ -42,14 +43,6 @@
 # define _LIBCPP_USE_UTIMENSAT
 #endif
 
-#if defined(_LIBCPP_WIN32API)
-#  define PATHSTR(x) (L##x)
-#  define PATH_CSTR_FMT "\"%ls\""
-#else
-#  define PATHSTR(x) (x)
-#  define PATH_CSTR_FMT "\"%s\""
-#endif
-
 _LIBCPP_BEGIN_NAMESPACE_FILESYSTEM
 
 namespace detail {
@@ -58,49 +51,6 @@ namespace detail {
 // Non anonymous, to allow access from two translation units.
 _LIBCPP_HIDE_FROM_ABI errc __win_err_to_errc(int err);
 #endif
-
-inline _LIBCPP_HIDE_FROM_ABI _LIBCPP_ATTRIBUTE_FORMAT(__printf__, 1, 0) string
-format_string_impl(const char* msg, va_list ap) {
-  array<char, 256> buf;
-
-  va_list apcopy;
-  va_copy(apcopy, ap);
-  int ret = ::vsnprintf(buf.data(), buf.size(), msg, apcopy);
-  va_end(apcopy);
-
-  string result;
-  if (static_cast<size_t>(ret) < buf.size()) {
-    result.assign(buf.data(), static_cast<size_t>(ret));
-  } else {
-    // we did not provide a long enough buffer on our first attempt. The
-    // return value is the number of bytes (excluding the null byte) that are
-    // needed for formatting.
-    size_t size_with_null = static_cast<size_t>(ret) + 1;
-    result.__resize_default_init(size_with_null - 1);
-    ret = ::vsnprintf(&result[0], size_with_null, msg, ap);
-    _LIBCPP_ASSERT(static_cast<size_t>(ret) == (size_with_null - 1), "TODO");
-  }
-  return result;
-}
-
-inline _LIBCPP_HIDE_FROM_ABI _LIBCPP_ATTRIBUTE_FORMAT(__printf__, 1, 2) string
-format_string(const char* msg, ...) {
-  string ret;
-  va_list ap;
-  va_start(ap, msg);
-#ifndef _LIBCPP_HAS_NO_EXCEPTIONS
-  try {
-#endif // _LIBCPP_HAS_NO_EXCEPTIONS
-    ret = format_string_impl(msg, ap);
-#ifndef _LIBCPP_HAS_NO_EXCEPTIONS
-  } catch (...) {
-    va_end(ap);
-    throw;
-  }
-#endif // _LIBCPP_HAS_NO_EXCEPTIONS
-  va_end(ap);
-  return ret;
-}
 
 inline _LIBCPP_HIDE_FROM_ABI error_code capture_errno() {
   _LIBCPP_ASSERT(errno != 0, "Expected errno to be non-zero");
@@ -180,7 +130,7 @@ struct ErrorHandler {
       return;
     }
     string what =
-        string("in ") + func_name_ + ": " + format_string_impl(msg, ap);
+        string("in ") + func_name_ + ": " + detail::vformat_string(msg, ap);
     switch (bool(p1_) + bool(p2_)) {
     case 0:
       __throw_filesystem_error(what, ec);

@@ -10,14 +10,11 @@
 #define PATH_PARSER_H
 
 #include <__utility/unreachable.h>
-#include <climits>
-#include <cstdlib>
+#include <cstddef>
 #include <filesystem>
-#include <iterator>
-#include <string_view>
-#include <type_traits>
+#include <utility>
 
-#include "filesystem_common.h"
+#include "format_string.h"
 
 _LIBCPP_BEGIN_NAMESPACE_FILESYSTEM
 
