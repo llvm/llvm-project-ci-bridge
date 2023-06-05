@@ -12,6 +12,7 @@
 #include <filesystem>
 #include <stack>
 
+#include "error.h"
 #include "filesystem_common.h"
 
 _LIBCPP_BEGIN_NAMESPACE_FILESYSTEM
