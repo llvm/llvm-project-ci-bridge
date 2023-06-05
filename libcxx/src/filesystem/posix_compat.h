@@ -35,6 +35,7 @@
 # include <io.h>
 # include <winioctl.h>
 #else
+# include <fcntl.h>
 # include <unistd.h>
 # include <sys/stat.h>
 # include <sys/statvfs.h>

@@ -110,9 +110,14 @@ endif()
 
 if (LIBCXX_ENABLE_FILESYSTEM)
   list(APPEND LIBCXX_SOURCES
-    filesystem/filesystem_common.h
-    filesystem/operations.cpp
+    filesystem/directory_entry.cpp
     filesystem/directory_iterator.cpp
+    filesystem/filesystem_clock.cpp
+    filesystem/filesystem_common.h
+    filesystem/filesystem_error.cpp
+    filesystem/operations.cpp
+    filesystem/path_parser.h
+    filesystem/path.cpp
     filesystem/posix_compat.h
     )
   # Filesystem uses __int128_t, which requires a definition of __muloi4 when
