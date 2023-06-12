@@ -22,6 +22,8 @@
 #include <utility>
 #include <system_error>
 
+#include "posix_compat.h"
+
 #if defined(_LIBCPP_WIN32API)
 # define WIN32_LEAN_AND_MEAN
 # define NOMINMAX
@@ -307,7 +309,7 @@ struct time_util_base {
           .count();
 
 private:
-  static _LIBCPP_CONSTEXPR_SINCE_CXX14 fs_duration get_min_nsecs() {
+  static _LIBCPP_CONSTEXPR fs_duration get_min_nsecs() {
     return duration_cast<fs_duration>(
         fs_nanoseconds(min_nsec_timespec) -
         duration_cast<fs_nanoseconds>(fs_seconds(1)));
@@ -327,7 +329,9 @@ private:
     return max_seconds >= numeric_limits<TimeT>::max() &&
            min_seconds <= numeric_limits<TimeT>::min();
   }
+#if _LIBCPP_STD_VER >= 14
   static_assert(check_range(), "the representable range is unacceptable small");
+#endif
 };
 
 template <class FileTimeT, class TimeT>
@@ -600,6 +604,245 @@ static file_time_type get_write_time(const WIN32_FIND_DATAW& data) {
 }
 
 #endif // !_LIBCPP_WIN32API
+
+file_time_type __extract_last_write_time(const path& p, const StatT& st,
+                                         error_code* ec) {
+  using detail::fs_time;
+  ErrorHandler<file_time_type> err("last_write_time", ec, &p);
+
+  auto ts = detail::extract_mtime(st);
+  if (!fs_time::is_representable(ts))
+    return err.report(errc::value_too_large);
+
+  return fs_time::convert_from_timespec(ts);
+}
+
+//                       POSIX HELPERS
+
+#if defined(_LIBCPP_WIN32API)
+namespace detail {
+
+errc __win_err_to_errc(int err) {
+  constexpr struct {
+    DWORD win;
+    errc errc;
+  } win_error_mapping[] = {
+      {ERROR_ACCESS_DENIED, errc::permission_denied},
+      {ERROR_ALREADY_EXISTS, errc::file_exists},
+      {ERROR_BAD_NETPATH, errc::no_such_file_or_directory},
+      {ERROR_BAD_PATHNAME, errc::no_such_file_or_directory},
+      {ERROR_BAD_UNIT, errc::no_such_device},
+      {ERROR_BROKEN_PIPE, errc::broken_pipe},
+      {ERROR_BUFFER_OVERFLOW, errc::filename_too_long},
+      {ERROR_BUSY, errc::device_or_resource_busy},
+      {ERROR_BUSY_DRIVE, errc::device_or_resource_busy},
+      {ERROR_CANNOT_MAKE, errc::permission_denied},
+      {ERROR_CANTOPEN, errc::io_error},
+      {ERROR_CANTREAD, errc::io_error},
+      {ERROR_CANTWRITE, errc::io_error},
+      {ERROR_CURRENT_DIRECTORY, errc::permission_denied},
+      {ERROR_DEV_NOT_EXIST, errc::no_such_device},
+      {ERROR_DEVICE_IN_USE, errc::device_or_resource_busy},
+      {ERROR_DIR_NOT_EMPTY, errc::directory_not_empty},
+      {ERROR_DIRECTORY, errc::invalid_argument},
+      {ERROR_DISK_FULL, errc::no_space_on_device},
+      {ERROR_FILE_EXISTS, errc::file_exists},
+      {ERROR_FILE_NOT_FOUND, errc::no_such_file_or_directory},
+      {ERROR_HANDLE_DISK_FULL, errc::no_space_on_device},
+      {ERROR_INVALID_ACCESS, errc::permission_denied},
+      {ERROR_INVALID_DRIVE, errc::no_such_device},
+      {ERROR_INVALID_FUNCTION, errc::function_not_supported},
+      {ERROR_INVALID_HANDLE, errc::invalid_argument},
+      {ERROR_INVALID_NAME, errc::no_such_file_or_directory},
+      {ERROR_INVALID_PARAMETER, errc::invalid_argument},
+      {ERROR_LOCK_VIOLATION, errc::no_lock_available},
+      {ERROR_LOCKED, errc::no_lock_available},
+      {ERROR_NEGATIVE_SEEK, errc::invalid_argument},
+      {ERROR_NOACCESS, errc::permission_denied},
+      {ERROR_NOT_ENOUGH_MEMORY, errc::not_enough_memory},
+      {ERROR_NOT_READY, errc::resource_unavailable_try_again},
+      {ERROR_NOT_SAME_DEVICE, errc::cross_device_link},
+      {ERROR_NOT_SUPPORTED, errc::not_supported},
+      {ERROR_OPEN_FAILED, errc::io_error},
+      {ERROR_OPEN_FILES, errc::device_or_resource_busy},
+      {ERROR_OPERATION_ABORTED, errc::operation_canceled},
+      {ERROR_OUTOFMEMORY, errc::not_enough_memory},
+      {ERROR_PATH_NOT_FOUND, errc::no_such_file_or_directory},
+      {ERROR_READ_FAULT, errc::io_error},
+      {ERROR_REPARSE_TAG_INVALID, errc::invalid_argument},
+      {ERROR_RETRY, errc::resource_unavailable_try_again},
+      {ERROR_SEEK, errc::io_error},
+      {ERROR_SHARING_VIOLATION, errc::permission_denied},
+      {ERROR_TOO_MANY_OPEN_FILES, errc::too_many_files_open},
+      {ERROR_WRITE_FAULT, errc::io_error},
+      {ERROR_WRITE_PROTECT, errc::permission_denied},
+  };
+
+  for (const auto &pair : win_error_mapping)
+    if (pair.win == static_cast<DWORD>(err))
+      return pair.errc;
+  return errc::invalid_argument;
+}
+
+} // namespace detail
+#endif
+
+using value_type = path::value_type;
+using string_type = path::string_type;
+
+struct FileDescriptor {
+  const path& name;
+  int fd = -1;
+  StatT m_stat;
+  file_status m_status;
+
+  template <class... Args>
+  static FileDescriptor create(const path* p, error_code& ec, Args... args) {
+    ec.clear();
+    int fd;
+    if ((fd = detail::open(p->c_str(), args...)) == -1) {
+      ec = capture_errno();
+      return FileDescriptor{p};
+    }
+    return FileDescriptor(p, fd);
+  }
+
+  template <class... Args>
+  static FileDescriptor create_with_status(const path* p, error_code& ec,
+                                           Args... args) {
+    FileDescriptor fd = create(p, ec, args...);
+    if (!ec)
+      fd.refresh_status(ec);
+
+    return fd;
+  }
+
+  file_status get_status() const { return m_status; }
+  StatT const& get_stat() const { return m_stat; }
+
+  bool status_known() const { return _VSTD_FS::status_known(m_status); }
+
+  file_status refresh_status(error_code& ec);
+
+  void close() noexcept {
+    if (fd != -1)
+      detail::close(fd);
+    fd = -1;
+  }
+
+  FileDescriptor(FileDescriptor&& other)
+      : name(other.name), fd(other.fd), m_stat(other.m_stat),
+        m_status(other.m_status) {
+    other.fd = -1;
+    other.m_status = file_status{};
+  }
+
+  ~FileDescriptor() { close(); }
+
+  FileDescriptor(FileDescriptor const&) = delete;
+  FileDescriptor& operator=(FileDescriptor const&) = delete;
+
+private:
+  explicit FileDescriptor(const path* p, int descriptor = -1) : name(*p), fd(descriptor) {}
+};
+
+perms posix_get_perms(const StatT& st) noexcept {
+  return static_cast<perms>(st.st_mode) & perms::mask;
+}
+
+file_status create_file_status(error_code& m_ec, path const& p,
+                               const StatT& path_stat, error_code* ec) {
+  if (ec)
+    *ec = m_ec;
+  if (m_ec && (m_ec.value() == ENOENT || m_ec.value() == ENOTDIR)) {
+    return file_status(file_type::not_found);
+  } else if (m_ec) {
+    ErrorHandler<void> err("posix_stat", ec, &p);
+    err.report(m_ec, "failed to determine attributes for the specified path");
+    return file_status(file_type::none);
+  }
+  // else
+
+  file_status fs_tmp;
+  auto const mode = path_stat.st_mode;
+  if (S_ISLNK(mode))
+    fs_tmp.type(file_type::symlink);
+  else if (S_ISREG(mode))
+    fs_tmp.type(file_type::regular);
+  else if (S_ISDIR(mode))
+    fs_tmp.type(file_type::directory);
+  else if (S_ISBLK(mode))
+    fs_tmp.type(file_type::block);
+  else if (S_ISCHR(mode))
+    fs_tmp.type(file_type::character);
+  else if (S_ISFIFO(mode))
+    fs_tmp.type(file_type::fifo);
+  else if (S_ISSOCK(mode))
+    fs_tmp.type(file_type::socket);
+  else
+    fs_tmp.type(file_type::unknown);
+
+  fs_tmp.permissions(detail::posix_get_perms(path_stat));
+  return fs_tmp;
+}
+
+file_status posix_stat(path const& p, StatT& path_stat, error_code* ec) {
+  error_code m_ec;
+  if (detail::stat(p.c_str(), &path_stat) == -1)
+    m_ec = detail::capture_errno();
+  return create_file_status(m_ec, p, path_stat, ec);
+}
+
+file_status posix_stat(path const& p, error_code* ec) {
+  StatT path_stat;
+  return posix_stat(p, path_stat, ec);
+}
+
+file_status posix_lstat(path const& p, StatT& path_stat, error_code* ec) {
+  error_code m_ec;
+  if (detail::lstat(p.c_str(), &path_stat) == -1)
+    m_ec = detail::capture_errno();
+  return create_file_status(m_ec, p, path_stat, ec);
+}
+
+file_status posix_lstat(path const& p, error_code* ec) {
+  StatT path_stat;
+  return posix_lstat(p, path_stat, ec);
+}
+
+// http://pubs.opengroup.org/onlinepubs/9699919799/functions/ftruncate.html
+bool posix_ftruncate(const FileDescriptor& fd, off_t to_size, error_code& ec) {
+  if (detail::ftruncate(fd.fd, to_size) == -1) {
+    ec = capture_errno();
+    return true;
+  }
+  ec.clear();
+  return false;
+}
+
+bool posix_fchmod(const FileDescriptor& fd, const StatT& st, error_code& ec) {
+  if (detail::fchmod(fd.fd, st.st_mode) == -1) {
+    ec = capture_errno();
+    return true;
+  }
+  ec.clear();
+  return false;
+}
+
+bool stat_equivalent(const StatT& st1, const StatT& st2) {
+  return (st1.st_dev == st2.st_dev && st1.st_ino == st2.st_ino);
+}
+
+file_status FileDescriptor::refresh_status(error_code& ec) {
+  // FD must be open and good.
+  m_status = file_status{};
+  m_stat = {};
+  error_code m_ec;
+  if (detail::fstat(fd, &m_stat) == -1)
+    m_ec = capture_errno();
+  m_status = create_file_status(m_ec, name, m_stat, &ec);
+  return m_status;
+}
 
 } // namespace
 } // end namespace detail
