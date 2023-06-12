@@ -24,6 +24,7 @@
 #define POSIX_COMPAT_H
 
 #include <__assert>
+#include <__config>
 #include <filesystem>
 
 #include "filesystem_common.h"
@@ -35,6 +36,7 @@
 # include <io.h>
 # include <winioctl.h>
 #else
+# include <fcntl.h>
 # include <unistd.h>
 # include <sys/stat.h>
 # include <sys/statvfs.h>
@@ -70,6 +72,12 @@ struct LIBCPP_REPARSE_DATA_BUFFER {
   };
 };
 #endif
+
+// TODO: Check whether these functions actually need internal linkage, or if they can be made normal header functions
+_LIBCPP_DIAGNOSTIC_PUSH
+_LIBCPP_GCC_DIAGNOSTIC_IGNORED("-Wunused-function")
+_LIBCPP_CLANG_DIAGNOSTIC_IGNORED("-Wunused-function")
+_LIBCPP_CLANG_DIAGNOSTIC_IGNORED("-Wunused-template")
 
 _LIBCPP_BEGIN_NAMESPACE_FILESYSTEM
 
@@ -518,5 +526,7 @@ using SSizeT = ::ssize_t;
 } // end namespace detail
 
 _LIBCPP_END_NAMESPACE_FILESYSTEM
+
+_LIBCPP_DIAGNOSTIC_POP
 
 #endif // POSIX_COMPAT_H
