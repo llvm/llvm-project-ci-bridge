@@ -66,7 +66,6 @@ PackConstructorInitializers: NextLine
 
 PenaltyIndentedWhitespace: 2
 
-Language: Cpp
 Standard: c++20
 SpacesInAngles: Leave
 
