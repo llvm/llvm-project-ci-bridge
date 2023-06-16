@@ -17,4 +17,7 @@
 // UNSUPPORTED: stdlib=libstdc++
 
 #define _LIBCPP_TESTING_FALLBACK_MAKE_INTEGER_SEQUENCE
-#include "make_integer_seq.fail.cpp"
+#include <utility>
+
+typedef std::make_integer_sequence<int, -3> MakeSeqT;
+MakeSeqT i; // expected-error-re@*:* {{{{(static_assert|static assertion)}} failed{{.*}}std::make_integer_sequence must have a non-negative sequence length}}
