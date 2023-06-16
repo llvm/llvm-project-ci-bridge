@@ -11,23 +11,22 @@
 // template <class... Types> class tuple;
 
 // template <size_t I, class... Types>
-// struct tuple_element<I, tuple<Types...> >
-// {
-//     typedef Ti type;
-// };
+//   const typename tuple_element<I, tuple<Types...> >::type&&
+//   get(const tuple<Types...>&& t);
 
 // UNSUPPORTED: c++03
 
 #include <tuple>
-#include <type_traits>
 
-int main(int, char**)
-{
-    using T =  std::tuple<int, long, void*>;
-    using E1 = typename std::tuple_element<1, T &>::type; // expected-error{{undefined template}}
-    using E2 = typename std::tuple_element<3, T>::type;
-    using E3 = typename std::tuple_element<4, T const>::type;
-        // expected-error-re@*:* 2 {{{{(static_assert|static assertion)}} failed}}
+template <class T> void cref(T const&) {}
+template <class T> void cref(T const&&) = delete;
 
-  return 0;
+std::tuple<int> const tup4() { return std::make_tuple(4); }
+
+void f() {
+    // LWG2485: tuple should not open a hole in the type system, get() should
+    // imitate [expr.ref]'s rules for accessing data members
+    {
+        cref(std::get<0>(tup4())); // expected-error {{call to deleted function 'cref'}}
+    }
 }
