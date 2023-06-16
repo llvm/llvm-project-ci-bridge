@@ -117,5 +117,42 @@ int main(int, char**)
 
     checkCV();
 
+    // Size wrong
+    {
+        static_assert(!std::is_constructible<std::span<int, 2>, int (&)[3]>::value, "");
+    }
+
+    // Type wrong
+    {
+        static_assert(!std::is_constructible<std::span<float>,    int (&)[3]>::value, "");
+        static_assert(!std::is_constructible<std::span<float, 3>, int (&)[3]>::value, "");
+    }
+
+    // CV wrong (dynamically sized)
+    {
+        static_assert(!std::is_constructible<std::span<int>, const int (&)[3]>::value, "");
+        static_assert(!std::is_constructible<std::span<int>, volatile int (&)[3]>::value, "");
+        static_assert(!std::is_constructible<std::span<int>, const volatile int (&)[3]>::value, "");
+
+        static_assert(!std::is_constructible<std::span<const int>, volatile int (&)[3]>::value, "");
+        static_assert(!std::is_constructible<std::span<const int>, const volatile int (&)[3]>::value, "");
+
+        static_assert(!std::is_constructible<std::span<volatile int>, const int (&)[3]>::value, "");
+        static_assert(!std::is_constructible<std::span<volatile int>, const volatile int (&)[3]>::value, "");
+    }
+
+    // CV wrong (statically sized)
+    {
+        static_assert(!std::is_constructible<std::span<int, 3>, const int (&)[3]>::value, "");
+        static_assert(!std::is_constructible<std::span<int, 3>, volatile int (&)[3]>::value, "");
+        static_assert(!std::is_constructible<std::span<int, 3>, const volatile int (&)[3]>::value, "");
+
+        static_assert(!std::is_constructible<std::span<const int, 3>, volatile int (&)[3]>::value, "");
+        static_assert(!std::is_constructible<std::span<const int, 3>, const volatile int (&)[3]>::value, "");
+
+        static_assert(!std::is_constructible<std::span<volatile int, 3>, const int (&)[3]>::value, "");
+        static_assert(!std::is_constructible<std::span<volatile int, 3>, const volatile int (&)[3]>::value, "");
+    }
+
     return 0;
 }
