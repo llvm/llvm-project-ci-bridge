@@ -163,11 +163,6 @@ EXECUTION OPTIONS
 
  Exit with status zero even if some tests fail.
 
-.. option:: --no-indirectly-run-check
-
- Do not error if a test would not be run if the user had specified the
- containing directory instead of naming the test directly.
-
 .. _selection-options:
 
 SELECTION OPTIONS
