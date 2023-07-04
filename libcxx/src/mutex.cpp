@@ -9,6 +9,7 @@
 #include <__assert>
 #include <limits>
 #include <mutex>
+#include <thread>
 
 #include "include/atomic_support.h"
 
@@ -144,7 +145,7 @@ recursive_timed_mutex::~recursive_timed_mutex()
 void
 recursive_timed_mutex::lock()
 {
-    __thread_id id = this_thread::get_id();
+    thread::id id = this_thread::get_id();
     unique_lock<mutex> lk(__m_);
     if (id ==__id_)
     {
@@ -162,7 +163,7 @@ recursive_timed_mutex::lock()
 bool
 recursive_timed_mutex::try_lock() noexcept
 {
-    __thread_id id = this_thread::get_id();
+    thread::id id = this_thread::get_id();
     unique_lock<mutex> lk(__m_, try_to_lock);
     if (lk.owns_lock() && (__count_ == 0 || id == __id_))
     {
