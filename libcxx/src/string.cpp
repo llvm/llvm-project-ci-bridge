@@ -7,12 +7,12 @@
 //===----------------------------------------------------------------------===//
 
 #include <__assert>
+#include <__verbose_abort>
 #include <cerrno>
 #include <charconv>
 #include <cstdlib>
 #include <limits>
 #include <stdexcept>
-#include <stdio.h>
 #include <string>
 
 #ifndef _LIBCPP_HAS_NO_WIDE_CHARACTERS
@@ -66,8 +66,7 @@ inline void throw_helper(const string& msg) {
 #ifndef _LIBCPP_HAS_NO_EXCEPTIONS
     throw T(msg);
 #else
-    fprintf(stderr, "%s\n", msg.c_str());
-    _VSTD::abort();
+    _LIBCPP_VERBOSE_ABORT(msg.c_str());
 #endif
 }
 
