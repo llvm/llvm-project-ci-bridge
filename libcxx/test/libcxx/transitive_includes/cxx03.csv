@@ -141,7 +141,6 @@ codecvt cwchar
 codecvt initializer_list
 codecvt iosfwd
 codecvt limits
-codecvt mutex
 codecvt new
 codecvt stdexcept
 codecvt string
@@ -349,7 +348,6 @@ fstream initializer_list
 fstream iosfwd
 fstream istream
 fstream limits
-fstream mutex
 fstream new
 fstream ostream
 fstream stdexcept
@@ -404,6 +402,7 @@ iomanip istream
 iomanip version
 ios atomic
 ios cctype
+ios cerrno
 ios clocale
 ios concepts
 ios cstddef
@@ -414,7 +413,6 @@ ios cwchar
 ios initializer_list
 ios iosfwd
 ios limits
-ios mutex
 ios new
 ios stdexcept
 ios string
@@ -496,7 +494,6 @@ locale ios
 locale iosfwd
 locale iterator
 locale limits
-locale mutex
 locale new
 locale stdexcept
 locale streambuf
@@ -701,7 +698,6 @@ regex initializer_list
 regex iosfwd
 regex iterator
 regex limits
-regex mutex
 regex new
 regex stdexcept
 regex string

@@ -1325,6 +1325,7 @@ module std [system] {
     module __mutex {
       module lock_guard  { private header "__mutex/lock_guard.h" }
       module mutex       { private header "__mutex/mutex.h" }
+      module once_flag   { private header "__mutex/once_flag.h" }
       module tag_types   { private header "__mutex/tag_types.h" }
       module unique_lock { private header "__mutex/unique_lock.h" }
     }
