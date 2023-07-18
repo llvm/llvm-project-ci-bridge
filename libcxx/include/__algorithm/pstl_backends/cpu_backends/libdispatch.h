@@ -10,22 +10,27 @@
 #define _LIBCPP___ALGORITHM_PSTL_BACKENDS_CPU_BACKENDS_LIBDISPATCH_H
 
 #include <__algorithm/lower_bound.h>
+#include <__algorithm/max.h>
 #include <__algorithm/upper_bound.h>
 #include <__atomic/atomic.h>
 #include <__config>
 #include <__exception/terminate.h>
 #include <__iterator/iterator_traits.h>
 #include <__iterator/move_iterator.h>
+#include <__memory/allocator.h>
 #include <__memory/construct_at.h>
 #include <__memory/unique_ptr.h>
 #include <__memory_resource/memory_resource.h>
 #include <__numeric/reduce.h>
 #include <__utility/exception_guard.h>
 #include <__utility/move.h>
+#include <__utility/pair.h>
 #include <__utility/terminate_on_exception.h>
 #include <cstddef>
 #include <new>
-#include <vector>
+
+_LIBCPP_PUSH_MACROS
+#include <__undef_macros>
 
 #if !defined(_LIBCPP_HAS_NO_INCOMPLETE_PSTL) && _LIBCPP_STD_VER >= 17
 
@@ -107,13 +112,20 @@ _LIBCPP_HIDE_FROM_ABI void __parallel_merge(
   }
 
   using __merge_range_t = __merge_range<_RandomAccessIterator1, _RandomAccessIterator2, _RandomAccessIterator3>;
+  auto const __n_ranges = __partitions.__chunk_count_ + 1;
 
-  vector<__merge_range_t> __ranges;
-  __ranges.reserve(__partitions.__chunk_count_ + 1);
+  // TODO: use __uninitialized_buffer
+  auto __destroy = [=](__merge_range_t* __ptr) {
+    std::destroy_n(__ptr, __n_ranges);
+    std::allocator<__merge_range_t>().deallocate(__ptr, __n_ranges);
+  };
+  unique_ptr<__merge_range_t[], decltype(__destroy)> __ranges(
+      std::allocator<__merge_range_t>().allocate(__n_ranges), __destroy);
 
   // TODO: Improve the case where the smaller range is merged into just a few (or even one) chunks of the larger case
   std::__terminate_on_exception([&] {
-    __ranges.emplace_back(__first1, __first2, __result);
+    __merge_range_t* __r = __ranges.get();
+    std::construct_at(__r++, __first1, __first2, __result);
 
     bool __iterate_first_range = __last1 - __first1 > __last2 - __first2;
 
@@ -137,14 +149,14 @@ _LIBCPP_HIDE_FROM_ABI void __parallel_merge(
     };
 
     // handle first chunk
-    __ranges.emplace_back(__compute_chunk(__partitions.__first_chunk_size_));
+    std::construct_at(__r++, __compute_chunk(__partitions.__first_chunk_size_));
 
     // handle 2 -> N - 1 chunks
     for (ptrdiff_t __i = 0; __i != __partitions.__chunk_count_ - 2; ++__i)
-      __ranges.emplace_back(__compute_chunk(__partitions.__chunk_size_));
+      std::construct_at(__r++, __compute_chunk(__partitions.__chunk_size_));
 
     // handle last chunk
-    __ranges.emplace_back(__last1, __last2, __result);
+    std::construct_at(__r, __last1, __last2, __result);
 
     __libdispatch::__dispatch_apply(__partitions.__chunk_count_, [&](size_t __index) {
       auto __first_iters = __ranges[__index];
@@ -222,5 +234,7 @@ _LIBCPP_HIDE_FROM_ABI inline void __cancel_execution() {}
 _LIBCPP_END_NAMESPACE_STD
 
 #endif // !defined(_LIBCPP_HAS_NO_INCOMPLETE_PSTL) && _LIBCPP_STD_VER >= 17
+
+_LIBCPP_POP_MACROS
 
 #endif // _LIBCPP___ALGORITHM_PSTL_BACKENDS_CPU_BACKENDS_LIBDISPATCH_H
