@@ -10,17 +10,12 @@
 #include <__algorithm/pstl_backends/cpu_backends/libdispatch.h>
 #include <__config>
 #include <dispatch/dispatch.h>
-#include <memory_resource>
 #include <thread>
 
 _LIBCPP_BEGIN_NAMESPACE_STD
 
 namespace __par_backend::inline __libdispatch {
 
-pmr::memory_resource* __get_memory_resource() {
-  static std::pmr::synchronized_pool_resource pool{pmr::new_delete_resource()};
-  return &pool;
-}
 
 void __dispatch_apply(size_t chunk_count, void* context, void (*func)(void* context, size_t chunk)) noexcept {
   ::dispatch_apply_f(chunk_count, DISPATCH_APPLY_AUTO, context, func);
