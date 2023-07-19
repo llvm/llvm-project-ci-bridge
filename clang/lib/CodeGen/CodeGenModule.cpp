@@ -1512,7 +1512,7 @@ void CodeGenModule::setDLLImportDLLExport(llvm::GlobalValue *GV,
 
 void CodeGenModule::setDLLImportDLLExport(llvm::GlobalValue *GV,
                                           const NamedDecl *D) const {
-  if (D && D->isExternallyVisible()) {
+  if (D && D->isExternallyVisible() && !D->hasAttr<ExcludeFromExplicitInstantiationAttr>()) {
     if (D->hasAttr<DLLImportAttr>())
       GV->setDLLStorageClass(llvm::GlobalVariable::DLLImportStorageClass);
     else if ((D->hasAttr<DLLExportAttr>() ||

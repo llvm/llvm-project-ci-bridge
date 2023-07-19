@@ -11696,7 +11696,7 @@ static GVALinkage adjustGVALinkageForAttributes(const ASTContext &Context,
                                                 const Decl *D, GVALinkage L) {
   // See http://msdn.microsoft.com/en-us/library/xa0d9ste.aspx
   // dllexport/dllimport on inline functions.
-  if (D->hasAttr<DLLImportAttr>()) {
+  if (D->hasAttr<DLLImportAttr>() && !D->hasAttr<ExcludeFromExplicitInstantiationAttr>()) {
     if (L == GVA_DiscardableODR || L == GVA_StrongODR)
       return GVA_AvailableExternally;
   } else if (D->hasAttr<DLLExportAttr>()) {
